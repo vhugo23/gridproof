@@ -1,0 +1,25 @@
+# Secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+# Node / Next.js
+node_modules/
+.next/
+out/
+.vercel/
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+# Generated files
+coverage/
+htmlcov/
+playwright-report/
+test-results/
+.DS_Store
+*.log
