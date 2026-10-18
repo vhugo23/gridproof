@@ -17,6 +17,15 @@
 | L-07 | No MapLibre or 3D dependencies. The only page is a status page, and `layout.tsx` still has the default "Create Next App" metadata. | Phases B, E |
 | L-08 | `ConnectionBadge` and its test exist, but no page uses the component. | Reuse or remove when the UI shell is built (E-01) |
 
+## Workspace initialization notes (A-03)
+
+- The service is not reachable yet: `GET /api/v1/session`, the cookie, token lookup, expiry enforcement on reads, session reuse and rate limiting are A-04 and later.
+- A fresh database (including Neon) needs the facility seed applied before any workspace can be created (`CatalogNotSeededError`). Seeding Neon still needs separate approval.
+- Only the SHA-256 digest of the token is stored (decision D-19). A server-side pepper was not adopted; adding one later is a security change that needs approval.
+- A caller that forgets to commit loses the workspace; A-04 must commit after a successful call and return the token only then.
+- Cleanup of expired workspaces and their children is still undefined (docs 03/04 leave the mechanism open).
+- Database error messages (for example a duplicate-hash violation) can contain the stored hash, never the plaintext token; A-04 must still keep such messages out of responses.
+
 ## Configuration schema notes (A-02)
 
 - Docs 01, 02 and 03 mention an adjustable load bank, but `SystemConfigV1` has no load-bank field by design: `equipment.load.critical_kw` is the baseline load, `set_load_kw` scenario events change demand during a simulation, and the load-bank visualization shows that simulated demand (decision D-18; doc 05 v1.2).
