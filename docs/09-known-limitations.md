@@ -9,13 +9,19 @@
 | ID | Limitation | Planned resolution |
 |---|---|---|
 | L-01 | The only backend routes are `GET /api/v1/health` and `GET /api/v1/health/database`. No session, facility, configuration, scenario or run endpoints exist. | Phase A onward |
-| L-02 | `facility_catalog` is empty. No seed exists. | A-01 |
+| L-02 | `facility_catalog` is empty in Neon. The seed module exists (A-01) but has not been applied to Neon; that needs separate approval. | Apply with owner approval |
 | L-03 | `GET /api/v1/health` returns `{status, service}`. The approved contract (doc 05 API-01) also requires `version` and `model_version`. | C-11 |
 | L-04 | The original two backend tests mock the database. F-11 added real-PostgreSQL schema, migration and transaction tests, but CI confirmation is pending and there is no application code to test yet. | Confirm CI; extend with A-01 onward |
 | L-05 | No `SystemConfigV1` schema, workspace lifecycle or version-saving service. | A-02 to A-06 |
 | L-06 | No simulation engine, scenario model, run persistence or reports. | Phases C, D |
 | L-07 | No MapLibre or 3D dependencies. The only page is a status page, and `layout.tsx` still has the default "Create Next App" metadata. | Phases B, E |
 | L-08 | `ConnectionBadge` and its test exist, but no page uses the component. | Reuse or remove when the UI shell is built (E-01) |
+
+## Facility catalog data (A-01)
+
+- Marker coordinates are **approximate city locations** (Wikipedia: Fridley 45.08417, -93.25667; Seymour 38.95722, -85.89444; Daventry 52.25778, -1.16278), not plant coordinates. No facility-level coordinates were found in public sources, and none were invented. Each `source_note` states this.
+- Source retrieval on 2026-10-17: the Seymour source (`investor.cummins.com`, news/detail/310) was retrieved and its text confirmed. The three `cummins.com` pages used for Fridley and Daventry (`/generators/power-integration-center`, `/en-na/eu/daventry-uk`) returned HTTP 403 to automated requests (a plain `curl` got 403 or 307), so their content was **not independently retrieved**; the purpose statements follow Cummins' text as shown in search results and are kept deliberately narrow. Open each URL in a browser and confirm before applying the seed to Neon.
+- Cummins's 2022 press release and Daventry milestone release were also 403 and were not used as `source_url`.
 
 ## Schema behavior observed by integration tests
 

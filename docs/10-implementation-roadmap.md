@@ -72,6 +72,7 @@ flowchart TD
     F[Existing foundation F-01 to F-09] --> F11[F-11 Isolated PostgreSQL test harness]
     F --> A2[A-02 SystemConfigV1 schema + validation]
     F11 --> A1[A-01 Catalog seed]
+    A1 --> A1b[A-01b GET /facilities]
     F11 --> A3
     A1 --> A3[A-03 Atomic workspace initialization service]
     A2 --> A3
@@ -92,7 +93,7 @@ flowchart TD
     AI -. optional .-> R
 ```
 
-**First vertical slice / immediate next work:** F-11 → A-01 → A-02 → A-03 → A-04 → A-05 → A-06 → A-07 → A-08. Resist starting a second major screen until this entire path works.
+**First vertical slice / immediate next work:** F-11 → A-01 → A-01b → A-02 → A-03 → A-04 → A-05 → A-06 → A-07 → A-08. Resist starting a second major screen until this entire path works.
 
 **Sprint 1 (agreed scope):** F-11 (isolated PostgreSQL integration testing) and A-01 (facility catalog seeding). No public endpoint is exposed in Sprint 1.
 
@@ -106,7 +107,8 @@ flowchart TD
 
 | ID | Task | Depends on | Priority | Status | Estimate | Completion criterion |
 |---|---|---|---|---|---|---|
-| **A-01** | Seed verified public facility catalog (`fridley`, `seymour`, `daventry`), with source attribution | F-05, F-06, F-11 | P0 | **Ready** | 2–3 h | Idempotent seed inserts exactly three verified facilities; Fridley interactive only; no invented coordinates or live operations; seed idempotency tested on isolated PostgreSQL |
+| **A-01** | Seed verified public facility catalog (`fridley`, `seymour`, `daventry`), with source attribution | F-05, F-06, F-11 | P0 | **Ready** | 2–3 h | Idempotent seed inserts exactly three verified facilities; Fridley interactive only; no invented coordinates or live operations; seed idempotency tested on isolated PostgreSQL *Implemented and passing locally on 2026-10-17 (uncommitted); becomes Done after CI is green. Marker positions are approximate city locations, labeled as such in `source_note`.* |
+| **A-01b** | Implement public `GET /api/v1/facilities` (doc 05 API-03) returning the seeded catalog | A-01 | P0 | **Blocked** (by A-01) | 2–3 h | Response matches API-03 (`catalog_version`, three facilities with `source_url` and `source_note`); public; `503 CATALOG_UNAVAILABLE` when unreadable; tested on isolated PostgreSQL; no schema change |
 | **A-02** | Define and validate Pydantic `SystemConfigV1` and the canonical default Fridley configuration (no database) | docs 04, 05 | P0 | **Ready** | 3–4 h | Canonical equipment IDs, G1=5 s default; schema rejects unknown fields, non-finite numbers, bad SOC/ranges; boundary tests |
 | **A-03** | Database service: atomically initialize a workspace (workspace row, default Fridley configuration, configuration version 1) | A-01, A-02, F-11 | P0 | **Blocked** | 4–6 h | Token hash stored; fixed 7-day expiry; exactly one config and one v1 per workspace; injected failure at each step rolls back all rows; tested on isolated PostgreSQL |
 | **A-04** | Implement `GET /api/v1/session` and secure anonymous workspace cookie on top of A-03 | A-03 | P0 | **Blocked** | 3–5 h | Full API-02 contract met; HttpOnly/Secure/SameSite settings; cookie reuse returns `is_new:false`; missing/expired/foreign session tests; initialization failure returns an error and leaves no rows |
@@ -167,7 +169,7 @@ flowchart TD
 | ID | Task | Depends on | Priority | Status | Estimate | Completion criterion |
 |---|---|---|---|---|---|---|
 | **E-01** | Build independent GridProof navigation shell and accessibility baseline | A-07 | P1 | **Planned** | 3–5 h | Clear branded navigation, keyboard reachability, visible non-affiliation notice |
-| **E-02** | Implement MapLibre geographic landing screen | A-01, E-01 | P0 | **Planned** | 5–7 h | Actual initial route is map; precisely three supported verified site markers |
+| **E-02** | Implement MapLibre geographic landing screen | A-01b, E-01 | P0 | **Planned** | 5–7 h | Actual initial route is map; precisely three supported verified site markers |
 | **E-03** | Facility detail panel and Fridley routing | E-02, B-03 | P0 | **Planned** | 3–5 h | Fridley opens lab; Seymour/Daventry public context only; no fabricated live metrics |
 | **E-04** | Integrate lab scene, equipment inspection, tests and results into coherent app | B-05, C-09, D-04, E-03 | P0 | **Planned** | 5–8 h | Full map→lab→edit→run→results journey works without navigating dead ends |
 | **E-05** | Polish responsiveness, skeletons, fallbacks and physical visuals | E-04, B-02 | P1 | **Planned** | 5–8 h | Demo usable on laptop and mobile; model failing to load does not block testing |
@@ -204,7 +206,7 @@ flowchart TD
 | Milestone | Scope | Demo at milestone exit | Status |
 |---|---|---|---|
 | M0 — Foundation | F-01…F-09 | Working frontend ↔ backend ↔ Neon and green CI | **Done** |
-| M1 — First vertical slice | F-11, A-01…A-08 | Change G1 5s→15s, save/retrieve both versions | **Next** |
+| M1 — First vertical slice | F-11, A-01…A-08 (including A-01b) | Change G1 5s→15s, save/retrieve both versions | **Next** |
 | M2 — Physical lab | B-01…B-05 | Select modeled physical equipment and inspect stored values | Planned |
 | M3 — Real simulator | C-01…C-11 | Run G1 readiness regression with saved evidence | Planned |
 | M4 — Explainable evidence | D-01…D-07 | Replay, compare, export saved run PDF | Planned |
@@ -243,7 +245,7 @@ For each coding-assistant task, request: **changed files, tests executed/results
 
 ## 8. Exactly where to begin
 
-**Next task (Sprint 1): `A-01`** (F-11 is Done). F-11 provides isolated PostgreSQL integration testing (never production Neon). A-01 is a **repeatable, sourced seed** of three public facility records (Fridley, Seymour, Daventry): check existing rows before inserting, use only verified coordinates, names and source URLs, and build seed-idempotency tests. `A-02` (`SystemConfigV1`) has no database dependency and may proceed independently. `GET /session` (A-04) ships only after the atomic initialization service (A-03) exists.
+**Next task (Sprint 1): `A-01`** (F-11 is Done; implemented locally, awaiting review and CI), followed by `A-01b` (`GET /api/v1/facilities`). F-11 provides isolated PostgreSQL integration testing (never production Neon). A-01 is a **repeatable, sourced seed** of three public facility records (Fridley, Seymour, Daventry): check existing rows before inserting, use only verified coordinates, names and source URLs, and build seed-idempotency tests. `A-02` (`SystemConfigV1`) has no database dependency and may proceed independently. `GET /session` (A-04) ships only after the atomic initialization service (A-03) exists.
 
 **Current state:** M0 complete, M1 not yet started; the configuration tables are migrated, but no workspace lifecycle, `SystemConfigV1`, save API, or simulation is implemented. Sprint 1 has not started.
 

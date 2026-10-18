@@ -46,11 +46,14 @@ docker compose -f backend/docker-compose.test.yml down -v
 | `test_db_safety.py` | The URL guard (accepted and rejected URLs) and that rejection messages never contain the password. Needs no database. |
 | `test_migrations.py` | Single head; upgrade, step-wise upgrade, downgrade, round trip, idempotent upgrade; schema compared with a hand-written specification (columns, defaults, checks, uniques, foreign keys, indexes); model/migration drift (`alembic check` equivalent). |
 | `test_schema_constraints.py` | Every named CHECK (including boundaries), UNIQUE, NOT NULL, foreign key and `ON DELETE RESTRICT`; server defaults; JSONB round trip. |
+| `test_facility_seed.py` | A-01 seed on real PostgreSQL: exact rows, only Fridley interactive, idempotency, drift repair, unexpected-row abort, foreign-key compatibility, CLI dry run (no connection), `--apply`, remote-host refusal, credential-safe errors, rollback after a failure past the upsert. |
 | `test_transactions.py` | Multi-table rollback on exception and on a database error; commit visibility between connections; row lock blocking (`SELECT ... FOR UPDATE`); concurrent duplicate version. Waits are bounded by `lock_timeout`. |
 
 Isolation: constraint tests run in a rolled-back outer transaction; transaction tests commit and then `TRUNCATE` the four tables; migration tests reset the `public` schema first; each module re-migrates. Results do not depend on test order.
 
 Behavior without a database: locally the integration tests skip with a message; with `GRIDPROOF_REQUIRE_TEST_DB=1` (CI) they error.
+
+Seed data rules (no database): `backend/tests/test_facility_seed_data.py` checks the three rows against independently written expectations and rejects invalid rows and catalogs.
 
 ## Gaps
 
@@ -97,5 +100,18 @@ Recorded on 2026-10-17 on the local Windows machine. These are the only results 
 GitHub Actions (run 39096658114): Backend Checks and Frontend Checks succeeded; backend `101 passed, 1 warning`, none skipped; frontend 2 tests passed.
 
 Not observed: the Neon PostgreSQL major version.
+
+### A-01 facility seed (local Docker, `postgres:17`, 2026-10-17)
+
+| Check | Result |
+|---|---|
+| `ruff format --check` / `ruff check` on `app tests migrations/env.py` | Clean (22 files) |
+| `pytest -q` with the Docker database | 156 passed (40 seed-data tests, 15 seed integration tests), 1 warning; repeated, same result |
+| Seed tests alone; integration files in a different order; one test alone | 55 passed; 86 passed; 1 passed |
+| `pytest -q` without `TEST_DATABASE_URL` | 73 passed, 83 skipped |
+| `GRIDPROOF_REQUIRE_TEST_DB=1`, no URL | 73 passed, 83 errors (intended) |
+| Real CLI against the Docker database | Dry run: no connection, nothing written. `--apply`: 3 inserted; second run: 3 unchanged. Remote host without a matching `--confirm-host`: refused (exit 2). Missing settings: clear message, no URL. |
+
+Not run: the seed against Neon (not authorized), and the GitHub Actions run for this change.
 
 The CI status of earlier pushes is user-reported, not observed here.

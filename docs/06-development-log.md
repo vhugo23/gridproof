@@ -44,3 +44,9 @@ Documentation only; no application code, migrations or CI changes.
 - CI backend job gained a PostgreSQL 17 service container and now also lints `migrations/env.py`. GitHub Actions run 39096658114: both jobs green, 101 backend tests passed.
 - Finding: `ck_configurations_name` does not reject tab/newline-only names (see `09-known-limitations.md`).
 - Decision D-15 recorded. Observed results are in `07-testing-strategy.md`.
+
+## 2026-10-17 — A-01 facility catalog seed (uncommitted)
+
+- Added `backend/app/seed/facilities.py` (validated rows, idempotent upsert, CLI with dry run, `--apply`, and `--confirm-host` for remote databases) plus unit and PostgreSQL integration tests.
+- No schema change, migration, dependency, CI change or Neon access. Decision D-16 recorded; roadmap task A-01b (`GET /api/v1/facilities`) added.
+- Source limits are documented in `09-known-limitations.md`.
