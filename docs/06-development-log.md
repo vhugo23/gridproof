@@ -80,7 +80,7 @@ Documentation only; no application code, migrations or CI changes.
 - Added `app/services/workspace_auth.py` (cookie to active workspace, read-only, reusing the A-04 parser and A-03 hash), `app/services/configurations.py` (workspace-scoped read of the version named by the pointer, validated with `load_snapshot`) and `app/routes/configurations.py`; registered in `app/main.py`. `docs/05-api-contracts.md` is v1.4. Decision D-21. No migration, schema, model, dependency, CI or frontend change; no Neon access.
 - 35 PostgreSQL tests added; seven deliberate breakages were each caught. GitHub Actions run 39134011492: both jobs green, 554 backend and 2 frontend tests passed. Nothing was seeded on Neon or deployed.
 
-## 2026-10-18 — A-06 `POST /api/v1/configurations/{id}/versions` (uncommitted)
+## 2026-10-18 — A-06 `POST /api/v1/configurations/{id}/versions` (`d117df2`)
 
 - Added `save_version` to `app/services/configurations.py` (workspace-scoped row lock, stored-data validation, optimistic concurrency, best-effort replay, atomic insert, name and pointer update) and the `POST` route in `app/routes/configurations.py` (Origin allowlist, media type, 256 KiB body limit on actual bytes, strict JSON parsing, sanitized errors). Added the optional `frontend_origins` setting (`FRONTEND_ORIGINS`). `docs/05-api-contracts.md` is v1.5. Decision D-22. No migration, model, dependency, CI or frontend change; no Neon access.
-- 109 PostgreSQL tests added; twelve deliberate breakages were each caught. A flaky A-05 test (digits matching inside a random request id) was fixed. Not committed; CI not run.
+- 109 PostgreSQL tests added; twelve deliberate breakages were each caught. A flaky A-05 test (digits matching inside a random request id) was fixed. GitHub Actions run 39136691225: both jobs green, 663 backend and 2 frontend tests passed. Nothing was seeded on Neon or deployed.

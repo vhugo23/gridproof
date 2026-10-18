@@ -207,4 +207,4 @@ Flaky test found and fixed during A-06: an A-05 test asserted `"121" not in resp
 
 Manual check (2026-10-18): uvicorn with `FRONTEND_ORIGINS=http://localhost:3100` on the Docker test database behind the unmodified local `next dev` rewrite. A `POST` with the cookie and `Origin: http://localhost:3100` gave `201` with `Cache-Control: no-store` and `Vary: Cookie` (plus Next's `Accept-Encoding`); the identical retry gave `200` with the same version; `Origin: https://evil.example` gave `403`; `GET /current` returned the saved version. Not verified: Vercel to Render in a deployed environment, and the production `FRONTEND_ORIGINS` value.
 
-GitHub Actions has not run for A-06 at the time of writing.
+GitHub Actions (run 39136691225, commit `d117df2`): Backend Checks and Frontend Checks succeeded; backend `663 passed, 1 warning`, none skipped; frontend 2 tests passed.

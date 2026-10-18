@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --gp-bg: #0b0c0e;
+  --gp-surface: #14161a;
+  --gp-surface-2: #1b1e23;
+  --gp-line: #2a2e35;
+  --gp-line-strong: #3a3f48;
+  --gp-text: #e8eaed;
+  --gp-muted: #9aa1ac;
+  --gp-faint: #6b727d;
+  --gp-red: #d0312d;
+  --gp-red-soft: #d0312d33;
+  --gp-steel: #8f99a8;
+  --gp-ok: #3ec28f;
+  --gp-warn: #e3a72f;
+  --gp-error: #ff6b63;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-gp-bg: var(--gp-bg);
+  --color-gp-surface: var(--gp-surface);
+  --color-gp-surface-2: var(--gp-surface-2);
+  --color-gp-line: var(--gp-line);
+  --color-gp-line-strong: var(--gp-line-strong);
+  --color-gp-text: var(--gp-text);
+  --color-gp-muted: var(--gp-muted);
+  --color-gp-faint: var(--gp-faint);
+  --color-gp-red: var(--gp-red);
+  --color-gp-steel: var(--gp-steel);
+  --color-gp-ok: var(--gp-ok);
+  --color-gp-warn: var(--gp-warn);
+  --color-gp-error: var(--gp-error);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--gp-bg);
+  color: var(--gp-text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gp-red);
+  outline-offset: 2px;
+}
+
+@keyframes gp-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes gp-lab-in {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.gp-lab-in {
+  animation: gp-lab-in 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.gp-pulse-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gp-pulse 2.2s ease-out infinite;
+}
+
+.gp-view {
+  transition:
+    opacity 600ms ease,
+    transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gp-pulse-ring {
+    animation: none;
+    opacity: 0.35;
+  }
+  .gp-lab-in {
+    animation: none;
+  }
+  .gp-view {
+    transition: opacity 120ms linear;
+    transform: none !important;
+  }
 }
