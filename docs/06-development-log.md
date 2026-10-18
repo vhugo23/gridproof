@@ -35,4 +35,12 @@ Documentation only; no application code, migrations or CI changes.
 - Restructured roadmap Phase A: session initialization is split into `SystemConfigV1` (A-02), an atomic initialization service (A-03) and `GET /session` (A-04). F-11 is now a prerequisite for database-backed work. Added C-11 for the health-contract update.
 - Document versions: 01 → 1.2, 02 → 1.2, 03 → 1.1, 10 → 1.1. Docs 04 and 05 are unchanged.
 - Checks run on this date are listed in [`07-testing-strategy.md`](07-testing-strategy.md#observed-results).
-- Nothing was committed.
+- Committed as `99dd538` on `main`.
+
+## 2026-10-17 — F-11 isolated PostgreSQL integration testing (uncommitted)
+
+- Added `backend/docker-compose.test.yml`, `backend/pytest.ini`, and `backend/tests/integration/` (guard, fixtures, migration, constraint and transaction tests).
+- `backend/migrations/env.py` accepts an injected connection (`config.attributes["connection"]`); behavior without one is unchanged (verified with offline `alembic upgrade head --sql`).
+- CI backend job gained a PostgreSQL 17 service container (not yet run on GitHub).
+- Finding: `ck_configurations_name` does not reject tab/newline-only names (see `09-known-limitations.md`).
+- Decision D-15 recorded. Observed results are in `07-testing-strategy.md`.

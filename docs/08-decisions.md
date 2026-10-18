@@ -27,6 +27,7 @@
 | D-12 | **PDF export** has implementation priority P1 but is required for the finished showcase. HTML-only export does not satisfy acceptance criteria. |
 | D-13 | `CLAUDE.md` is a local instruction file and is ignored through `.git/info/exclude`, not the repository `.gitignore`. |
 | D-14 | Document versions and dates change only when content changes substantively. Completed roadmap tasks are not reset. |
+| D-15 | **Automated database tests use isolated PostgreSQL.** Locally: a Docker container (`backend/docker-compose.test.yml`, loopback port 55432, `tmpfs` data). In GitHub Actions: a PostgreSQL service container. `TEST_DATABASE_URL` must be the approved disposable instance (host `127.0.0.1`/`localhost`, port 55432 or 5432, database `gridproof_test`, role `gridproof`); `backend/tests/integration/db_safety.py` rejects anything else, including all Neon hosts, before an engine is created. Integration tests never read `DATABASE_URL`. Migrations run in tests through an injected connection (`config.attributes["connection"]` in `migrations/env.py`), which leaves production migration behavior unchanged. In CI a missing test database fails the build (`GRIDPROOF_REQUIRE_TEST_DB=1`) instead of skipping. Production Neon is never used for automated tests. |
 
 ## Reconciliations applied on 2026-10-17
 
@@ -41,7 +42,7 @@
 
 ## Open items (not yet decided)
 
-- Source of the isolated PostgreSQL for F-11 (local container, Neon branch, or CI service container).
+- Neon's PostgreSQL major version. The test containers use `postgres:17`; the version query against Neon was not run (blocked in this session). Confirm in the Neon console and align the image tag if different.
 - Verified coordinates and source URLs for the three facilities (A-01). Doc 05's examples are placeholders.
 - Cleanup mechanism for expired workspaces, rate-limit mechanism and stale-run recovery (docs 03/05 leave these open).
 - Whether the stray empty directories `gridproof/` and `src/` at the repository root should be removed.

@@ -1,18 +1,18 @@
 # GridProof — Project Status
 
-**Updated:** 2026-10-17 · **Branch:** `main` · **Last commit when written:** `4231476`
+**Updated:** 2026-10-17 · **Branch:** `main` · **Last commit when written:** `99dd538`
 
 ## Current position
 
 - **M0 Foundation: Done** (F-01 to F-09). Next.js 16 frontend, FastAPI backend, Neon connection, Alembic migrations 001 and 002, test tooling and CI.
 - **M1 First vertical slice: not started.**
-- **Sprint 1 (agreed):** F-11 isolated PostgreSQL integration testing, then A-01 facility catalog seeding. The documentation foundation was completed first, and its changes are not committed.
+- **Sprint 1 (agreed):** F-11 isolated PostgreSQL integration testing, then A-01 facility catalog seeding. The documentation foundation is committed (`99dd538`). F-11 is implemented and passing locally but **not committed and not yet run in CI**, so it is not marked Done.
 
 ## Implemented (verified in source)
 
 - Backend: FastAPI app with `GET /api/v1/health` and `GET /api/v1/health/database`; settings; DB session; four domain tables defined in the models and in migrations 001/002 (`demo_workspaces`, `facility_catalog`, `configurations`, `configuration_versions`).
 - Frontend: one status page that calls the health endpoint through a rewrite.
-- Tests: 2 backend (mocked DB), 2 frontend. Results in [`07-testing-strategy.md`](07-testing-strategy.md#observed-results).
+- Tests: 2 original backend (mocked DB), 2 frontend, plus F-11: 29 guard tests and 70 PostgreSQL integration tests (migrations, constraints, transactions). Results in [`07-testing-strategy.md`](07-testing-strategy.md#observed-results).
 
 ## Not implemented
 
@@ -25,19 +25,19 @@ F-11 → A-01 → A-02 → A-03 (atomic workspace initialization) → A-04 (`GET
 ## Outstanding issues
 
 1. `/health` does not match the approved contract (task C-11).
-2. No real-database tests (F-11).
+2. F-11 CI run pending; Neon PostgreSQL major version unconfirmed.
 3. Open decisions listed in [`08-decisions.md`](08-decisions.md#open-items-not-yet-decided).
 
 ## Risks
 
-- Database behavior cannot be proven until F-11 exists.
+- Isolated-database tests exist locally but have not yet run in CI.
 - Cookie forwarding through the Vercel rewrite to Render is unproven.
 - The simulator, the core credibility feature, is untouched.
 
 ## Next three recommended actions
 
-1. Review and commit the documentation foundation (owner decision; nothing is committed yet).
-2. Choose the isolated PostgreSQL source for F-11 and implement the harness.
+1. Review F-11, authorize a commit, and confirm the GitHub Actions run is green.
+2. Confirm Neon's PostgreSQL major version and align the test image if needed.
 3. Implement A-01 with verified facility coordinates and source URLs.
 
 ## Documents

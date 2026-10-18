@@ -11,11 +11,15 @@
 | L-01 | The only backend routes are `GET /api/v1/health` and `GET /api/v1/health/database`. No session, facility, configuration, scenario or run endpoints exist. | Phase A onward |
 | L-02 | `facility_catalog` is empty. No seed exists. | A-01 |
 | L-03 | `GET /api/v1/health` returns `{status, service}`. The approved contract (doc 05 API-01) also requires `version` and `model_version`. | C-11 |
-| L-04 | Backend tests mock the database. There are no real-PostgreSQL tests and no migration tests. CI has no PostgreSQL service. | F-11, G-01 |
+| L-04 | The original two backend tests mock the database. F-11 added real-PostgreSQL schema, migration and transaction tests, but CI confirmation is pending and there is no application code to test yet. | Confirm CI; extend with A-01 onward |
 | L-05 | No `SystemConfigV1` schema, workspace lifecycle or version-saving service. | A-02 to A-06 |
 | L-06 | No simulation engine, scenario model, run persistence or reports. | Phases C, D |
 | L-07 | No MapLibre or 3D dependencies. The only page is a status page, and `layout.tsx` still has the default "Create Next App" metadata. | Phases B, E |
 | L-08 | `ConnectionBadge` and its test exist, but no page uses the component. | Reuse or remove when the UI shell is built (E-01) |
+
+## Schema behavior observed by integration tests
+
+- `ck_configurations_name` uses `length(trim(name))`. PostgreSQL `trim()` removes spaces only, so a name consisting only of tabs or newlines passes the check (`test_configuration_name_check_trims_spaces_only`). Backend input validation (A-02 onward) must reject control-character-only names. Changing the constraint would be a schema change and needs approval.
 
 ## Configuration and tooling
 

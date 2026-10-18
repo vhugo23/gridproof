@@ -59,7 +59,7 @@ Current status reflects the latest user-reported local executions and GitHub pro
 | F-08 | GitHub Actions CI | P0 | **Done** | Both CI jobs green per latest user confirmation | 0 h |
 | F-09 | Root README and local instructions | P0 | **Done** | Updated README confirmed in GitHub; current setup documented | 0 h |
 | F-10 | Cross-platform reproducible npm lockfile / restore `npm ci` in CI | P1 | **Planned** | Ubuntu and Windows `npm ci` succeed from same committed lockfile; CI uses `npm ci` | 2–4 h |
-| F-11 | Real database integration test harness | P0 | **Ready** | Tests run against isolated PostgreSQL with migrations; never mutate production Neon. **Prerequisite for every database-backed feature (A-01, A-03 onward).** | 3–5 h |
+| F-11 | Real database integration test harness | P0 | **Ready** | Tests run against isolated PostgreSQL with migrations; never mutate production Neon. **Prerequisite for every database-backed feature (A-01, A-03 onward).** *Implemented and passing locally on 2026-10-17 (uncommitted); becomes Done after the GitHub Actions service-container run is green.* | 3–5 h |
 
 **Database currently present:** `alembic_version`, `demo_workspaces`, `facility_catalog`, `configurations`, `configuration_versions`. Tables are **not** proof that workspace/session endpoints or version-save services exist yet. The only confirmed backend routes are health checks.
 

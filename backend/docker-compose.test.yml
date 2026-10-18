@@ -1,0 +1,21 @@
+# Disposable PostgreSQL for automated integration tests ONLY.
+# Never point application or migration commands for real data at this database.
+#
+#   docker compose -f backend/docker-compose.test.yml up -d --wait
+#   docker compose -f backend/docker-compose.test.yml down -v
+services:
+  postgres-test:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: gridproof
+      POSTGRES_PASSWORD: gridproof_test
+      POSTGRES_DB: gridproof_test
+    ports:
+      - "127.0.0.1:55432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gridproof -d gridproof_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
