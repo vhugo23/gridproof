@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.routes.configurations import router as configurations_router
 from app.routes.facilities import router as facilities_router
 from app.routes.session import router as session_router
 
@@ -15,6 +16,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.include_router(configurations_router)
 app.include_router(facilities_router)
 app.include_router(session_router)
 

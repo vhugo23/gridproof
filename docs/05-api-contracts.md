@@ -1,7 +1,7 @@
 # GridProof — API Contracts
 
 **Document:** `docs/05-api-contracts.md`  
-**Version:** 1.3 · 2026-10-18 (1.3: API-02 session cookie, headers, errors and issuance cap specified, fixed-expiry wording; 1.2: SystemConfigV1 clarifications; 1.1: API-03 adds `description`; cache and error headers specified)  
+**Version:** 1.4 · 2026-10-18 (1.4: API-05 authentication and stored-data error behavior; 1.3: API-02 session cookie, headers, errors and issuance cap specified, fixed-expiry wording; 1.2: SystemConfigV1 clarifications; 1.1: API-03 adds `description`; cache and error headers specified)  
 **Status:** API-first contract for implementation, not a claim that endpoints exist  
 **Depends on:** [PRD](./01-product-requirements.md), [Flows](./02-user-flows-and-acceptance-criteria.md), [Architecture](./03-system-architecture.md), [Database](./04-database-design.md)
 
@@ -117,7 +117,9 @@ The example's empty snapshots are **abbreviation placeholders**, not valid persi
 ### API-05 `GET /configurations/current`
 - **Auth:** required workspace cookie. **Params/body:** none.
 - **200:** `{ "configuration_id":"<uuid>", "name":"Fridley Test Configuration", "latest_version":1, "version_id":"<uuid>", "schema_version":"config-v1", "snapshot": <SystemConfigV1>, "saved_at":"<ISO UTC>" }`.
-- **Rules:** only current workspace's default Fridley configuration; no implicit reset on errors; immutable version ID. **Errors:** `401 SESSION_REQUIRED/WORKSPACE_EXPIRED`, `404 CONFIGURATION_NOT_FOUND`, `503 DATABASE_UNAVAILABLE`.
+- **Rules:** only the authenticated workspace's current configuration; the workspace comes solely from the session cookie (no workspace or configuration identifier is accepted); the returned version is the one named by `latest_version`; the snapshot is validated by its stored `schema_version` and returned in normalized form; no implicit reset or repair on errors; immutable version ID. This route never creates or renews a session and never sets a cookie.
+- **Headers (all responses, including errors):** `Cache-Control: no-store`, `Vary: Cookie`, `X-Request-ID`.
+- **Errors:** `401 SESSION_REQUIRED` (cookie missing, malformed, duplicated, or matching no workspace); `401 WORKSPACE_EXPIRED` (well-formed cookie matching an existing workspace whose fixed expiry has passed); `404 CONFIGURATION_NOT_FOUND` (active workspace without a configuration record); `500 INTERNAL_ERROR` (stored data fault: unsupported `schema_version`, a snapshot that fails validation, or a configuration whose `latest_version` is 0 or names a missing version; the response never includes stored data); `503 DATABASE_UNAVAILABLE`. Both `401` codes tell the client to call `GET /session` explicitly.
 
 ### API-06 `POST /configurations/{configuration_id}/versions`
 - **Auth:** required. **Path:** `configuration_id` UUID. **Headers:** `Content-Type: application/json`, Origin.

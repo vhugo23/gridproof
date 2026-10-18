@@ -74,3 +74,8 @@ Documentation only; no application code, migrations or CI changes.
 
 - Added `app/services/sessions.py` (cookie parsing, reuse, advisory-lock-serialized issuance with a global rolling cap) and `app/routes/session.py`, registered in `app/main.py`. `docs/05-api-contracts.md` is v1.3 (fixed-expiry wording, cookie attributes, headers, errors, `Retry-After`). Decision D-20. No migration, schema, dependency, CI or frontend change; no Neon access.
 - Added cookie-parser unit tests and PostgreSQL endpoint tests (rollback and commit failures via triggers, expiry, reuse, malformed and duplicate cookies, concurrency, cap, lock timeout, proxy headers, log secrecy). Eight deliberate breakages were each caught. GitHub Actions run 39133125159: both jobs green, 519 backend and 2 frontend tests passed. Nothing was seeded on Neon or deployed.
+
+## 2026-10-18 — A-05 `GET /api/v1/configurations/current` (uncommitted)
+
+- Added `app/services/workspace_auth.py` (cookie to active workspace, read-only, reusing the A-04 parser and A-03 hash), `app/services/configurations.py` (workspace-scoped read of the version named by the pointer, validated with `load_snapshot`) and `app/routes/configurations.py`; registered in `app/main.py`. `docs/05-api-contracts.md` is v1.4. Decision D-21. No migration, schema, model, dependency, CI or frontend change; no Neon access.
+- 35 PostgreSQL tests added; seven deliberate breakages were each caught. Not committed; CI not run.

@@ -8,7 +8,7 @@
 
 | ID | Limitation | Planned resolution |
 |---|---|---|
-| L-01 | Backend routes: health, `GET /api/v1/facilities` and `GET /api/v1/session`. No configuration, scenario or run endpoints exist. | Phase A onward |
+| L-01 | Backend routes: health, `GET /api/v1/facilities`, `GET /api/v1/session` and `GET /api/v1/configurations/current`. No version-saving, scenario or run endpoints exist. | Phase A onward |
 | L-02 | `facility_catalog` is empty in Neon. The seed module exists (A-01) but has not been applied to Neon; that needs separate approval. | Apply with owner approval |
 | L-03 | `GET /api/v1/health` returns `{status, service}`. The approved contract (doc 05 API-01) also requires `version` and `model_version`. | C-11 |
 | L-04 | The original two backend tests mock the database. F-11 added real-PostgreSQL schema, migration and transaction tests, but CI confirmation is pending and there is no application code to test yet. | Confirm CI; extend with A-01 onward |
@@ -36,6 +36,13 @@
 - `Secure` cookies work on `http://localhost` in Chrome and Firefox but not in Safari; use HTTPS or another browser for local manual checks.
 - Cookie forwarding through the deployed Vercel rewrite to Render is still unproven. A-04 tests the backend behind forwarded headers and was checked by hand through the local `next dev` rewrite (`Set-Cookie`, `Cache-Control: no-store` and `Vary: Cookie` preserved; Next appends `Accept-Encoding` to `Vary`; reuse with the cookie returned `is_new:false`). That local check used the Docker test database, not Vercel or Render. Verify in staging (G-04).
 - An unseeded database makes `/session` return 503 until the facility seed is applied.
+
+## Current configuration notes (A-05)
+
+- A workspace is expected to hold exactly one configuration (A-04 creates one). If more ever exist, the endpoint returns the one with the latest `updated_at` (then lowest id); there is no per-configuration selector.
+- An unknown token and a token whose workspace row was removed by a future cleanup are both `SESSION_REQUIRED`; only an existing expired row yields `WORKSPACE_EXPIRED`. Expired-row cleanup remains undefined.
+- Stored-data faults (pointer 0, missing version, invalid or unsupported snapshot) return `500` and are not repaired. The database check allows `latest_version = 0`, so that state is reachable by direct database edits only.
+- The lookup is a read on every request with no caching and no session-activity tracking.
 
 ## Configuration schema notes (A-02)
 
