@@ -8,7 +8,7 @@
 
 | ID | Limitation | Planned resolution |
 |---|---|---|
-| L-01 | Backend routes: health, `GET /api/v1/facilities`, `GET /api/v1/session` and `GET /api/v1/configurations/current`. No version-saving, scenario or run endpoints exist. | Phase A onward |
+| L-01 | Backend routes: health, `GET /api/v1/facilities`, `GET /api/v1/session`, `GET /api/v1/configurations/current` and `POST /api/v1/configurations/{id}/versions`. No scenario or run endpoints exist. | Phase A onward |
 | L-02 | `facility_catalog` is empty in Neon. The seed module exists (A-01) but has not been applied to Neon; that needs separate approval. | Apply with owner approval |
 | L-03 | `GET /api/v1/health` returns `{status, service}`. The approved contract (doc 05 API-01) also requires `version` and `model_version`. | C-11 |
 | L-04 | The original two backend tests mock the database. F-11 added real-PostgreSQL schema, migration and transaction tests, but CI confirmation is pending and there is no application code to test yet. | Confirm CI; extend with A-01 onward |
@@ -43,6 +43,16 @@
 - An unknown token and a token whose workspace row was removed by a future cleanup are both `SESSION_REQUIRED`; only an existing expired row yields `WORKSPACE_EXPIRED`. Expired-row cleanup remains undefined.
 - Stored-data faults (pointer 0, missing version, invalid or unsupported snapshot) return `500` and are not repaired. The database check allows `latest_version = 0`, so that state is reachable by direct database edits only.
 - The lookup is a read on every request with no caching and no session-activity tracking.
+
+## Version saving notes (A-06)
+
+- **CSRF:** Origin checking is defense in depth, not complete protection. A request without an `Origin` header is accepted (non-browser clients), and the allowlist cannot tell apart different pages of an allowed origin or other same-site origins. The remaining protection is `SameSite=Lax` (cookies are not sent on cross-site POSTs) and the `application/json` requirement. Same-site sibling origins and non-browser clients that obtain a cookie are not covered.
+- **`FRONTEND_ORIGINS`:** unset or empty means every browser `Origin` is rejected, so the frontend's writes fail until it is configured on the backend host (local development: `http://localhost:3000`; production: the Vercel origin). Setting it on Render is a deployment action that has not been done.
+- **Replay is content matching, not idempotency:** a different request with identical content sent right after a save is answered `200` with the existing version instead of `409`. It only covers the immediately previous version; there is no idempotency key for saves.
+- **Names are not versioned:** the name is stored on the configuration row and overwritten by each save, so older versions carry no name. Anything needing the name at save time (reports, run evidence) must capture it itself.
+- **No version cap or save rate limit:** each save stores one small normalized snapshot, but a workspace can create unlimited versions until its 7-day expiry. Adding a cap is a new product rule and needs approval.
+- **Strict stored-data checks block saves:** if the latest stored version is corrupt, saves return `500` rather than appending over it (no silent repair).
+- **Request framing:** the 256 KiB limit is enforced in the route on actual bytes read; the ASGI server itself has no separate body limit.
 
 ## Configuration schema notes (A-02)
 

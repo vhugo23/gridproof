@@ -10,11 +10,14 @@ from datetime import datetime
 from typing import Any
 
 from pydantic import ValidationError
-from sqlalchemy import and_, select
+from sqlalchemy import and_, func, select, text
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
 from app.db.models import Configuration, ConfigurationVersion
 from app.domain.system_config import (
+    SCHEMA_VERSION,
+    SystemConfigV1,
     UnsupportedSchemaVersion,
     load_snapshot,
     to_snapshot,
@@ -88,3 +91,160 @@ def read_current_configuration(
         snapshot=to_snapshot(config),
         saved_at=version.created_at,
     )
+
+
+# ---------------------------------------------------------------------------
+# Saving a new version (roadmap task A-06)
+# ---------------------------------------------------------------------------
+
+# Bounded waits, applied with SET LOCAL semantics so they end with the transaction.
+LOCK_TIMEOUT_MS = 2000
+STATEMENT_TIMEOUT_MS = 5000
+_PG_LOCK_NOT_AVAILABLE = "55P03"
+
+
+class VersionConflictError(RuntimeError):
+    def __init__(self, current_version: int):
+        super().__init__("version conflict")
+        self.current_version = current_version
+
+
+class SaveBusyError(RuntimeError):
+    """The configuration row lock could not be acquired within the bounded wait."""
+
+
+class FacilityMismatchError(RuntimeError):
+    """The submitted snapshot names a different facility than the configuration."""
+
+
+@dataclass(frozen=True)
+class SavedVersion:
+    configuration_id: uuid.UUID
+    version_id: uuid.UUID
+    version_number: int
+    schema_version: str
+    saved_at: datetime
+    created: bool  # False for an approved identical replay
+
+
+def save_version(
+    db: Session,
+    workspace_id: uuid.UUID,
+    configuration_id: uuid.UUID,
+    expected_version: int,
+    name: str,
+    config: SystemConfigV1,
+) -> SavedVersion:
+    """Append an immutable version under a row lock, or replay an identical save.
+
+    Runs in the caller's session transaction and always ends it: commit on success
+    (the result is returned only after the commit), rollback otherwise.
+    """
+    try:
+        result = _save_version_locked(
+            db, workspace_id, configuration_id, expected_version, name, config
+        )
+        db.commit()
+        return result
+    except DBAPIError as exc:
+        db.rollback()
+        if getattr(exc.orig, "sqlstate", None) == _PG_LOCK_NOT_AVAILABLE:
+            raise SaveBusyError from None
+        raise
+    except BaseException:
+        db.rollback()
+        raise
+
+
+def _save_version_locked(
+    db: Session,
+    workspace_id: uuid.UUID,
+    configuration_id: uuid.UUID,
+    expected_version: int,
+    name: str,
+    config: SystemConfigV1,
+) -> SavedVersion:
+    db.execute(
+        text(
+            "SELECT set_config('lock_timeout', :lock, true), "
+            "set_config('statement_timeout', :stmt, true)"
+        ),
+        {"lock": f"{LOCK_TIMEOUT_MS}ms", "stmt": f"{STATEMENT_TIMEOUT_MS}ms"},
+    )
+    # Ownership is part of the lock query: a foreign id is indistinguishable from a
+    # missing one.
+    configuration = db.scalars(
+        select(Configuration)
+        .where(
+            Configuration.id == configuration_id,
+            Configuration.workspace_id == workspace_id,
+        )
+        .with_for_update()
+    ).first()
+    if configuration is None:
+        raise ConfigurationNotFoundError
+
+    latest = configuration.latest_version
+    if latest < 1:
+        raise StoredConfigurationError("pointer_not_set", configuration.id)
+    current = db.scalars(
+        select(ConfigurationVersion).where(
+            ConfigurationVersion.configuration_id == configuration.id,
+            ConfigurationVersion.version_number == latest,
+        )
+    ).first()
+    if current is None:
+        raise StoredConfigurationError("pointer_version_missing", configuration.id)
+    try:
+        current_config = load_snapshot(current.schema_version, current.snapshot_json)
+    except UnsupportedSchemaVersion:
+        raise StoredConfigurationError(
+            "unsupported_schema_version", configuration.id
+        ) from None
+    except ValidationError:
+        raise StoredConfigurationError("invalid_snapshot", configuration.id) from None
+
+    if config.facility_id != configuration.facility_id:
+        raise FacilityMismatchError
+
+    if expected_version == latest:
+        version = ConfigurationVersion(
+            id=uuid.uuid4(),
+            configuration_id=configuration.id,
+            version_number=latest + 1,
+            schema_version=SCHEMA_VERSION,
+            snapshot_json=to_snapshot(config),
+        )
+        db.add(version)
+        db.flush()
+        # The pointer and name move only after the version exists, in this transaction.
+        configuration.latest_version = version.version_number
+        configuration.name = name
+        configuration.updated_at = func.now()
+        db.flush()
+        db.refresh(version, ["created_at"])
+        return SavedVersion(
+            configuration_id=configuration.id,
+            version_id=version.id,
+            version_number=version.version_number,
+            schema_version=version.schema_version,
+            saved_at=version.created_at,
+            created=True,
+        )
+
+    # Best-effort replay (not true request idempotency): the previous request's save
+    # is the latest version and the submitted content equals what is stored.
+    if (
+        expected_version + 1 == latest
+        and configuration.name == name
+        and to_snapshot(current_config) == to_snapshot(config)
+    ):
+        return SavedVersion(
+            configuration_id=configuration.id,
+            version_id=current.id,
+            version_number=current.version_number,
+            schema_version=current.schema_version,
+            saved_at=current.created_at,
+            created=False,
+        )
+    raise VersionConflictError(latest)

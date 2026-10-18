@@ -437,7 +437,9 @@ def test_invalid_saved_snapshot_is_a_500_and_not_echoed(client, seeded, caplog, 
         {"s": json.dumps(snapshot)},
         reason="invalid_snapshot",
     )
-    assert "121" not in response.text and "seymour" not in response.text
+    # Random hex request ids can contain digits, so inspect the text without them.
+    text_without_ids = re.sub(r"req_[0-9a-f]{32}", "", response.text)
+    assert "121" not in text_without_ids and "seymour" not in text_without_ids
 
 
 def test_snapshot_that_is_not_an_object_is_a_500(client, seeded, caplog):
