@@ -1,12 +1,12 @@
 # GridProof — Project Status
 
-**Updated:** 2026-10-17 · **Branch:** `main` · **Last commit when written:** `99dd538`
+**Updated:** 2026-10-17 · **Branch:** `main` · **Last commit when written:** `2041663`
 
 ## Current position
 
 - **M0 Foundation: Done** (F-01 to F-09). Next.js 16 frontend, FastAPI backend, Neon connection, Alembic migrations 001 and 002, test tooling and CI.
 - **M1 First vertical slice: not started.**
-- **Sprint 1 (agreed):** F-11 isolated PostgreSQL integration testing, then A-01 facility catalog seeding. The documentation foundation is committed (`99dd538`). F-11 is implemented and passing locally but **not committed and not yet run in CI**, so it is not marked Done.
+- **Sprint 1 (agreed):** F-11 isolated PostgreSQL integration testing, then A-01 facility catalog seeding. The documentation foundation is committed (`99dd538`). **F-11 is Done** (commit `2041663`, CI green on both jobs). Next: A-01.
 
 ## Implemented (verified in source)
 
@@ -25,20 +25,21 @@ F-11 → A-01 → A-02 → A-03 (atomic workspace initialization) → A-04 (`GET
 ## Outstanding issues
 
 1. `/health` does not match the approved contract (task C-11).
-2. F-11 CI run pending; Neon PostgreSQL major version unconfirmed.
-3. Open decisions listed in [`08-decisions.md`](08-decisions.md#open-items-not-yet-decided).
+2. Neon PostgreSQL major version unconfirmed (test image is `postgres:17`).
+3. `ck_configurations_name` accepts tab/newline-only names; Pydantic validation (A-02) must reject them.
+4. Open decisions listed in [`08-decisions.md`](08-decisions.md#open-items-not-yet-decided).
 
 ## Risks
 
-- Isolated-database tests exist locally but have not yet run in CI.
+- Test PostgreSQL major version may differ from Neon's.
 - Cookie forwarding through the Vercel rewrite to Render is unproven.
 - The simulator, the core credibility feature, is untouched.
 
 ## Next three recommended actions
 
-1. Review F-11, authorize a commit, and confirm the GitHub Actions run is green.
+1. Implement A-01 with verified facility coordinates and source URLs (plan first).
 2. Confirm Neon's PostgreSQL major version and align the test image if needed.
-3. Implement A-01 with verified facility coordinates and source URLs.
+3. Implement A-02 (`SystemConfigV1`), including rejection of control-character-only names.
 
 ## Documents
 
