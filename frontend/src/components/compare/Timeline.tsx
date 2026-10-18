@@ -10,7 +10,7 @@ export type TimelineRow = {
 
 const SHORT: Record<EvidenceEventType, string> = {
   utility_outage: "Outage",
-  start_generator: "Start G1",
+  start_generator: "G1 start",
   battery_depleted: "Battery empty",
   g1_ready: "G1 ready",
   g1_transfer_complete: "Transfer",
@@ -28,11 +28,12 @@ function tickStep(end: number): number {
   return 60_000;
 }
 
-const W = 760;
-const LEFT = 120;
-const RIGHT = 20;
-const ROW_H = 96;
-const TOP = 28;
+// Drawn in a compact coordinate space so text stays legible when the pane is narrow.
+const W = 360;
+const LEFT = 64;
+const RIGHT = 12;
+const ROW_H = 112;
+const TOP = 40;
 
 export default function Timeline({
   rows,
@@ -50,11 +51,12 @@ export default function Timeline({
   const step = tickStep(rawEnd);
   const end = Math.ceil(rawEnd / step) * step;
   const x = (ms: number) => LEFT + (ms / end) * (W - LEFT - RIGHT);
-  const height = TOP + rows.length * ROW_H + 24;
+  const height = TOP + rows.length * ROW_H + 18;
   const ticks = Array.from(
     { length: Math.floor(end / step) + 1 },
     (_, i) => i * step,
   );
+  const limitLabelW = 66;
 
   return (
     <svg
@@ -68,14 +70,14 @@ export default function Timeline({
           <line
             x1={x(t)}
             x2={x(t)}
-            y1={TOP - 6}
-            y2={height - 22}
+            y1={TOP - 4}
+            y2={height - 18}
             stroke="#ffffff"
             strokeOpacity="0.07"
           />
           <text
             x={x(t)}
-            y={height - 8}
+            y={height - 5}
             textAnchor="middle"
             className="fill-gp-faint font-mono text-[10px]"
           >
@@ -87,22 +89,33 @@ export default function Timeline({
       <line
         x1={x(thresholdMs)}
         x2={x(thresholdMs)}
-        y1={TOP - 12}
-        y2={height - 22}
+        y1={TOP - 4}
+        y2={height - 18}
         stroke="var(--gp-warn)"
-        strokeDasharray="5 4"
-        strokeWidth="1.5"
+        strokeDasharray="6 4"
+        strokeWidth="2.5"
+      />
+      <rect
+        x={x(thresholdMs) - limitLabelW / 2}
+        y={4}
+        width={limitLabelW}
+        height="22"
+        rx="5"
+        fill="#2b2310"
+        stroke="var(--gp-warn)"
+        strokeWidth="1.2"
       />
       <text
-        x={x(thresholdMs) + 5}
-        y={TOP - 14}
-        className="fill-gp-warn font-mono text-[10px]"
+        x={x(thresholdMs)}
+        y={19}
+        textAnchor="middle"
+        className="fill-gp-warn font-mono text-[12px] font-bold"
       >
         {fmtSeconds(thresholdMs)} limit
       </text>
 
       {rows.map((row, i) => {
-        const y = TOP + i * ROW_H + 40;
+        const y = TOP + i * ROW_H + 58;
         const ready = row.evidence.requirements.find(
           (r) => r.requirement_id === "G1_READY_WITHIN_10S",
         );
@@ -113,26 +126,29 @@ export default function Timeline({
         const readyEvent = row.evidence.events.find(
           (e) => e.type === "g1_ready",
         );
-        const byTime = new Map<number, string[]>();
+        // One label per timestamp, so events sharing an instant never crowd.
+        const groups: Array<{ at: number; labels: string[] }> = [];
         for (const e of row.evidence.events) {
           if (e.type === "horizon_reached") continue;
-          byTime.set(e.at_ms, [...(byTime.get(e.at_ms) ?? []), SHORT[e.type]]);
+          const last = groups[groups.length - 1];
+          if (last && last.at === e.at_ms) last.labels.push(SHORT[e.type]);
+          else groups.push({ at: e.at_ms, labels: [SHORT[e.type]] });
         }
         return (
           <g key={row.key} data-timeline-row={row.key}>
             <text
-              x="8"
-              y={y + 4}
-              className="fill-gp-text text-[12px] font-semibold"
+              x="4"
+              y={y - 2}
+              className="fill-gp-text text-[11.5px] font-bold"
             >
               {row.label}
             </text>
             <text
-              x="8"
-              y={y + 18}
-              className="fill-gp-faint font-mono text-[10px]"
+              x="4"
+              y={y + 13}
+              className="fill-gp-muted font-mono text-[10px]"
             >
-              G1 {row.evidence.inputs.g1_startup_delay_s} s start
+              G1 {row.evidence.inputs.g1_startup_delay_s} s
             </text>
             <line
               x1={x(0)}
@@ -140,59 +156,72 @@ export default function Timeline({
               y1={y}
               y2={y}
               stroke="#ffffff"
-              strokeOpacity="0.12"
+              strokeOpacity="0.14"
             />
             {start && readyEvent && (
               <rect
                 x={x(start.at_ms)}
-                y={y - 5}
+                y={y - 6}
                 width={Math.max(2, x(readyEvent.at_ms) - x(start.at_ms))}
-                height="10"
-                rx="3"
+                height="12"
+                rx="4"
                 fill={ok ? "var(--gp-ok)" : "var(--gp-error)"}
-                opacity="0.75"
+                opacity="0.8"
               />
             )}
-            {[...byTime.entries()].map(([at, labels]) => (
-              <g key={at}>
-                <circle
-                  cx={x(at)}
-                  cy={y}
-                  r="5"
-                  fill="var(--gp-bg)"
-                  stroke="var(--gp-text)"
-                  strokeWidth="1.5"
-                />
-                {labels.map((label, k) => (
+            {groups.map((group, k) => {
+              const lift = 20 + (k % 2) * 17;
+              const anchor =
+                group.at === 0
+                  ? "start"
+                  : x(group.at) > W - 64
+                    ? "end"
+                    : "middle";
+              return (
+                <g key={group.at}>
+                  <line
+                    x1={x(group.at)}
+                    x2={x(group.at)}
+                    y1={y - 5}
+                    y2={y - lift + 3}
+                    stroke="var(--gp-line-strong)"
+                  />
+                  <circle
+                    cx={x(group.at)}
+                    cy={y}
+                    r="5.5"
+                    fill="var(--gp-bg)"
+                    stroke="var(--gp-text)"
+                    strokeWidth="1.8"
+                  />
                   <text
-                    key={label}
-                    x={Math.min(x(at) + 2, W - 60)}
-                    y={y - 14 - k * 12}
-                    textAnchor={at === 0 ? "start" : "middle"}
-                    className="fill-gp-muted text-[10px]"
+                    x={x(group.at)}
+                    y={y - lift}
+                    textAnchor={anchor}
+                    className="fill-gp-text text-[11px]"
                   >
-                    {label}
+                    {group.labels.join(" · ")}
                   </text>
-                ))}
-                <text
-                  x={x(at)}
-                  y={y + 22}
-                  textAnchor={at === 0 ? "start" : "middle"}
-                  className="fill-gp-faint font-mono text-[9px]"
-                >
-                  {fmtSeconds(at)}
-                </text>
-              </g>
-            ))}
+                  <text
+                    x={x(group.at)}
+                    y={y + 22}
+                    textAnchor={anchor}
+                    className="fill-gp-muted font-mono text-[10px]"
+                  >
+                    {fmtSeconds(group.at)}
+                  </text>
+                </g>
+              );
+            })}
             {row.cursorMs !== null && (
               <g data-cursor={row.key}>
                 <line
                   x1={x(Math.min(row.cursorMs, end))}
                   x2={x(Math.min(row.cursorMs, end))}
-                  y1={y - 30}
+                  y1={y - 38}
                   y2={y + 30}
                   stroke="var(--gp-red)"
-                  strokeWidth="2"
+                  strokeWidth="2.5"
                 />
               </g>
             )}

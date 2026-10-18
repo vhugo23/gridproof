@@ -159,3 +159,44 @@ describe("map -> lab -> G1 -> save flow", () => {
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 });
+
+describe("Industry Applications -> lab", () => {
+  it.each([
+    [
+      "Power generation",
+      /Open Generator G1 in the Fridley lab/,
+      "Generator G1",
+    ],
+    [
+      "Battery storage and switchgear",
+      /Open Battery Storage in the Fridley lab/,
+      "Battery Storage",
+    ],
+  ])(
+    "%s opens the lab with the right equipment selected",
+    async (title, action, heading) => {
+      stubApi();
+      render(<AppShell />);
+      fireEvent.click(
+        await screen.findByRole("button", { name: new RegExp(title) }),
+      );
+      fireEvent.click(screen.getByRole("button", { name: action }));
+      expect(
+        await screen.findByRole("heading", { name: heading }),
+      ).toBeInTheDocument();
+      expect(window.location.hash).toBe("#fridley-lab");
+    },
+  );
+
+  it("opens the lab with nothing selected from the motors brief", async () => {
+    stubApi();
+    render(<AppShell />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Motors and electrical/ }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /Open the Fridley lab/ }),
+    );
+    expect(await screen.findByText("Select equipment")).toBeInTheDocument();
+  });
+});

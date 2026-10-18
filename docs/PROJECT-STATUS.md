@@ -51,4 +51,5 @@ F-11 → A-01 → A-01b → A-02 → A-03 (atomic workspace initialization) → 
 
 - **A-07** frontend configuration editor, map and lab: commit `b79d012`, CI run 39139803047 green.
 - **Startup check** (`POST /api/v1/demo/startup-check`, doc 05 API-16, decision D-23): commit `cd09696`, CI run 39141348897 green (1321 backend, 21 frontend tests).
-- **Comparison UI** (baseline v1 versus latest saved version, timeline, assumptions, playback driven by evidence frames, labeled recorded-demo fallback): committed after `cd09696`; its CI result is recorded in the follow-up status update.
+- **Comparison UI** (baseline v1 versus latest saved version, timeline, assumptions, playback driven by evidence frames, labeled recorded-demo fallback): **Done**: commit `e9bedf0`, CI run 39142514734 green on both jobs (1323 backend, 36 frontend tests).
+- **Frontend presentation polish and Industry Applications** (gallery of five application briefs in one native dialog, lab links for G1 and battery, compact tabbed lab layout, inspector illustrations): frontend only; no backend, API, migration or dependency change. Application briefs are informational context, not simulations.

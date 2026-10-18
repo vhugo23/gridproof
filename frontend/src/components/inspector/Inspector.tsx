@@ -4,6 +4,9 @@ import { useId, useState, type ReactNode } from "react";
 import type { SaveIssue } from "@/lib/useWorkspaceConfig";
 import type { SystemConfigV1 } from "@/lib/types";
 import { ASSET_LABEL, type AssetId } from "../lab/assets";
+import EquipmentIllustration, {
+  type IllustrationKind,
+} from "./EquipmentIllustration";
 
 type Props = {
   asset: AssetId | null;
@@ -81,7 +84,7 @@ function NumberField({
               error || invalid ? "border-gp-error" : "border-gp-line-strong"
             }`}
           />
-          <span className="w-4 text-xs text-gp-faint">{unit}</span>
+          <span className="w-6 text-xs text-gp-faint">{unit}</span>
           <Badge editable />
         </span>
       </div>
@@ -130,16 +133,19 @@ function ToggleField({
 function Section({
   title,
   subtitle,
+  illustration,
   children,
 }: {
   title: string;
   subtitle: string;
+  illustration?: IllustrationKind;
   children: ReactNode;
 }) {
   return (
     <section aria-label={title}>
       <h2 className="text-base font-semibold text-gp-text">{title}</h2>
       <p className="mb-2 text-xs text-gp-faint">{subtitle}</p>
+      {illustration && <EquipmentIllustration kind={illustration} />}
       {children}
     </section>
   );
@@ -177,6 +183,7 @@ export default function Inspector({
       <Section
         title={ASSET_LABEL[asset]}
         subtitle="Synthetic generator set for the virtual lab."
+        illustration="generator"
       >
         <FixedRow label="Rated output" value={`${g.rated_kw} kW`} />
         <NumberField
@@ -203,6 +210,7 @@ export default function Inspector({
       <Section
         title={ASSET_LABEL.battery}
         subtitle="Synthetic battery energy storage system."
+        illustration="battery"
       >
         <FixedRow
           label="Inverter rating"
@@ -269,6 +277,7 @@ export default function Inspector({
     <Section
       title={ASSET_LABEL.switchgear}
       subtitle="Synthetic paralleling and transfer switchgear."
+      illustration="switchgear"
     >
       <FixedRow label="Operating mode" value={eq.switchgear.mode} />
     </Section>

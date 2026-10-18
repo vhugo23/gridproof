@@ -238,6 +238,8 @@ describe("utility-outage comparison", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /Save as new version/ }),
     );
+    await screen.findByText("Saved and confirmed from the server.");
+    fireEvent.click(screen.getByRole("tab", { name: /Test results/ }));
     expect(
       await screen.findByText(
         /latest saved version is v2\. Run the test again/,
@@ -403,7 +405,8 @@ describe("failures are safe", () => {
       expect(screen.getByLabelText("Startup delay")).toHaveValue("9");
       expect(screen.getByText("Unsaved changes.")).toBeInTheDocument();
 
-      // The recorded demo is still offered, separately labeled.
+      // The recorded demo is still offered from the results tab, separately labeled.
+      fireEvent.click(screen.getByRole("tab", { name: /Test results/ }));
       expect(
         screen.getByRole("button", { name: "Show recorded demo instead" }),
       ).toBeVisible();

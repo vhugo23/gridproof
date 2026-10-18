@@ -14,6 +14,8 @@ type Props = {
   frame?: EvidenceFrame | null;
   /** Caption shown under the scene while a frame is displayed. */
   frameCaption?: string;
+  /** Decorative thumbnail: no tags, no caption, not focusable or clickable. */
+  preview?: boolean;
 };
 
 const FLOOR_W = 12;
@@ -106,21 +108,34 @@ function Line({
 
 function Footprint({ id, selected }: { id: AssetId; selected: boolean }) {
   const f = FOOT[id];
-  const pad = 0.25;
-  const poly = pts([
-    iso(f.x - pad, f.y - pad),
-    iso(f.x + f.w + pad, f.y - pad),
-    iso(f.x + f.w + pad, f.y + f.d + pad),
-    iso(f.x - pad, f.y + f.d + pad),
-  ]);
+  const outline = (pad: number) =>
+    pts([
+      iso(f.x - pad, f.y - pad),
+      iso(f.x + f.w + pad, f.y - pad),
+      iso(f.x + f.w + pad, f.y + f.d + pad),
+      iso(f.x - pad, f.y + f.d + pad),
+    ]);
   return (
-    <polygon
-      points={poly}
-      fill={selected ? "var(--gp-red-soft)" : "transparent"}
-      stroke={selected ? "var(--gp-red)" : "transparent"}
-      strokeWidth="2"
-      className="transition-colors group-focus-visible:stroke-gp-red"
-    />
+    <g className="group-focus-visible:[&>polygon:last-child]:stroke-gp-red">
+      {selected && (
+        <polygon
+          points={outline(0.55)}
+          fill="none"
+          stroke="var(--gp-red)"
+          strokeOpacity="0.3"
+          strokeWidth="6"
+          strokeLinejoin="round"
+        />
+      )}
+      <polygon
+        points={outline(0.25)}
+        fill={selected ? "rgba(208, 49, 45, 0.3)" : "transparent"}
+        stroke={selected ? "var(--gp-red)" : "transparent"}
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+        className="transition-colors"
+      />
+    </g>
   );
 }
 
@@ -130,6 +145,7 @@ function Hotspot({
   frame,
   selected,
   onSelect,
+  preview,
   children,
 }: {
   id: AssetId;
@@ -137,8 +153,10 @@ function Hotspot({
   frame?: EvidenceFrame | null;
   selected: boolean;
   onSelect: (id: AssetId) => void;
+  preview?: boolean;
   children: ReactNode;
 }) {
+  if (preview) return <g>{children}</g>;
   const view = frame ? frameAssetView(id, frame) : null;
   const disabled = view ? view.dim : isDisabled(id, config);
   const value = view ? view.value : assetTag(id, config)[1];
@@ -192,35 +210,40 @@ function Tag({
     : isDisabled(id, config)
       ? "fill-gp-warn"
       : "fill-gp-text";
-  const [tx, ty] = iso(f.x + f.w / 2, f.y + f.d / 2, f.h + 26);
-  const width = 150;
+  const [tx, ty] = iso(f.x + f.w / 2, f.y + f.d / 2, f.h + 30);
+  const width = 176;
+  const height = 40;
   return (
     <g pointerEvents="none">
       <line
         x1={tx}
-        y1={ty + 16}
+        y1={ty + height / 2}
         x2={tx}
-        y2={ty + 26}
+        y2={ty + height / 2 + 12}
         stroke={selected ? "var(--gp-red)" : "var(--gp-line-strong)"}
-        strokeWidth="1"
+        strokeWidth={selected ? 2 : 1}
       />
-      <g transform={`translate(${tx - width / 2} ${ty - 16})`}>
+      <g transform={`translate(${tx - width / 2} ${ty - height / 2})`}>
         <rect
           width={width}
-          height="32"
-          rx="5"
-          fill="#0b0c0ee6"
+          height={height}
+          rx="6"
+          fill={selected ? "#2a1214" : "#0b0c0eee"}
           stroke={selected ? "var(--gp-red)" : "var(--gp-line-strong)"}
-          strokeWidth={selected ? 1.5 : 1}
+          strokeWidth={selected ? 2 : 1}
         />
         <text
-          x="9"
-          y="13"
-          className="fill-gp-muted font-mono text-[9px] tracking-widest"
+          x="10"
+          y="15"
+          className={`font-mono text-[10px] font-semibold tracking-wider ${selected ? "fill-gp-text" : "fill-gp-muted"}`}
         >
           {title}
         </text>
-        <text x="9" y="25" className={`font-mono text-[10.5px] ${valueClass}`}>
+        <text
+          x="10"
+          y="31"
+          className={`font-mono text-[12.5px] font-semibold ${valueClass}`}
+        >
           {value}
         </text>
       </g>
@@ -460,6 +483,7 @@ export default function LabScene({
   onSelect,
   frame,
   frameCaption,
+  preview = false,
 }: Props) {
   const floor = pts([
     iso(0, 0),
@@ -492,15 +516,20 @@ export default function LabScene({
     iso(0, 0, 84),
   ]);
 
-  const common = { config, frame, onSelect };
+  const common = { config, frame, onSelect, preview };
   const sel = (id: AssetId) => selected === id;
 
   return (
     <svg
-      viewBox="0 0 1000 650"
+      viewBox={preview ? "50 15 900 575" : "0 0 1000 650"}
       className="h-auto w-full"
-      role="group"
-      aria-label="Fridley Virtual Power Integration Lab, synthetic isometric view"
+      role={preview ? undefined : "group"}
+      aria-label={
+        preview
+          ? undefined
+          : "Fridley Virtual Power Integration Lab, synthetic isometric view"
+      }
+      aria-hidden={preview ? true : undefined}
     >
       <defs>
         <linearGradient id="lab-floor" x1="0" y1="0" x2="1" y2="1">
@@ -647,26 +676,29 @@ export default function LabScene({
         <Load />
       </Hotspot>
 
-      {ASSET_IDS.map((id) => (
-        <Tag
-          key={id}
-          id={id}
-          config={config}
-          frame={frame}
-          selected={sel(id)}
-        />
-      ))}
+      {!preview &&
+        ASSET_IDS.map((id) => (
+          <Tag
+            key={id}
+            id={id}
+            config={config}
+            frame={frame}
+            selected={sel(id)}
+          />
+        ))}
 
-      <text
-        x="500"
-        y="640"
-        textAnchor="middle"
-        className="fill-gp-faint font-mono text-[10px] tracking-widest"
-      >
-        {frame
-          ? (frameCaption ?? "SIMULATED PLAYBACK")
-          : "SYNTHETIC CUMMINS-INSPIRED REPRESENTATION · CONFIGURED TOPOLOGY, NOT LIVE POWER FLOW"}
-      </text>
+      {!preview && (
+        <text
+          x="500"
+          y="640"
+          textAnchor="middle"
+          className="fill-gp-faint font-mono text-[10px] tracking-widest"
+        >
+          {frame
+            ? (frameCaption ?? "SIMULATED PLAYBACK")
+            : "SYNTHETIC CUMMINS-INSPIRED REPRESENTATION · CONFIGURED TOPOLOGY, NOT LIVE POWER FLOW"}
+        </text>
+      )}
     </svg>
   );
 }
