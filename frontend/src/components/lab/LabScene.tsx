@@ -1,14 +1,19 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { SystemConfigV1 } from "@/lib/types";
+import type { EvidenceFrame, SystemConfigV1 } from "@/lib/types";
 import { ASSET_IDS, ASSET_LABEL, assetTag, type AssetId } from "./assets";
+import { frameAssetView, frameFlow } from "./frameView";
 import { Box, SHADES, iso, leftFaceLine, pts, rightFaceLine } from "./iso";
 
 type Props = {
   config: SystemConfigV1;
   selected: AssetId | null;
   onSelect: (id: AssetId) => void;
+  /** When set, the scene shows this evidence frame instead of the configured values. */
+  frame?: EvidenceFrame | null;
+  /** Caption shown under the scene while a frame is displayed. */
+  frameCaption?: string;
 };
 
 const FLOOR_W = 12;
@@ -122,18 +127,21 @@ function Footprint({ id, selected }: { id: AssetId; selected: boolean }) {
 function Hotspot({
   id,
   config,
+  frame,
   selected,
   onSelect,
   children,
 }: {
   id: AssetId;
   config: SystemConfigV1;
+  frame?: EvidenceFrame | null;
   selected: boolean;
   onSelect: (id: AssetId) => void;
   children: ReactNode;
 }) {
-  const disabled = isDisabled(id, config);
-  const [, value] = assetTag(id, config);
+  const view = frame ? frameAssetView(id, frame) : null;
+  const disabled = view ? view.dim : isDisabled(id, config);
+  const value = view ? view.value : assetTag(id, config)[1];
   return (
     <g
       role="button"
@@ -164,15 +172,26 @@ function Hotspot({
 function Tag({
   id,
   config,
+  frame,
   selected,
 }: {
   id: AssetId;
   config: SystemConfigV1;
+  frame?: EvidenceFrame | null;
   selected: boolean;
 }) {
   const f = FOOT[id];
-  const disabled = isDisabled(id, config);
-  const [title, value] = assetTag(id, config);
+  const view = frame ? frameAssetView(id, frame) : null;
+  const [title, value] = view ? [view.title, view.value] : assetTag(id, config);
+  const valueClass = view
+    ? view.tone === "bad"
+      ? "fill-gp-error"
+      : view.tone === "warn"
+        ? "fill-gp-warn"
+        : "fill-gp-text"
+    : isDisabled(id, config)
+      ? "fill-gp-warn"
+      : "fill-gp-text";
   const [tx, ty] = iso(f.x + f.w / 2, f.y + f.d / 2, f.h + 26);
   const width = 150;
   return (
@@ -201,11 +220,7 @@ function Tag({
         >
           {title}
         </text>
-        <text
-          x="9"
-          y="25"
-          className={`font-mono text-[10.5px] ${disabled ? "fill-gp-warn" : "fill-gp-text"}`}
-        >
+        <text x="9" y="25" className={`font-mono text-[10.5px] ${valueClass}`}>
           {value}
         </text>
       </g>
@@ -439,7 +454,13 @@ function Load() {
   );
 }
 
-export default function LabScene({ config, selected, onSelect }: Props) {
+export default function LabScene({
+  config,
+  selected,
+  onSelect,
+  frame,
+  frameCaption,
+}: Props) {
   const floor = pts([
     iso(0, 0),
     iso(FLOOR_W, 0),
@@ -471,7 +492,7 @@ export default function LabScene({ config, selected, onSelect }: Props) {
     iso(0, 0, 84),
   ]);
 
-  const common = { config, onSelect };
+  const common = { config, frame, onSelect };
   const sel = (id: AssetId) => selected === id;
 
   return (
@@ -546,14 +567,25 @@ export default function LabScene({ config, selected, onSelect }: Props) {
         />
       ))}
 
-      {/* electrical connections (configured topology, not live flow) */}
+      {/* electrical connections: configured topology, or the flow in the shown frame */}
       {PATHS.map(({ from, points }) => {
-        const dim = isDisabled(from, config);
+        const flow = frame ? frameFlow(from, frame) : null;
+        const dim = flow ? !flow.active : isDisabled(from, config);
+        const mid = iso(
+          (points[0][0] + points[points.length - 1][0]) / 2,
+          (points[0][1] + points[points.length - 1][1]) / 2,
+          1,
+        );
         const d = points
           .map(([x, y], i) => `${i ? "L" : "M"}${iso(x, y, 1).join(" ")}`)
           .join(" ");
         return (
-          <g key={from} opacity={dim ? 0.3 : 1} data-path={from}>
+          <g
+            key={from}
+            opacity={dim ? (flow ? 0.22 : 0.3) : 1}
+            data-path={from}
+            data-active={flow ? String(flow.active) : undefined}
+          >
             <path
               d={d}
               fill="none"
@@ -579,6 +611,18 @@ export default function LabScene({ config, selected, onSelect }: Props) {
               strokeLinejoin="round"
               opacity="0.6"
             />
+            {flow?.active && flow.kw !== null && from !== "load" && (
+              <text
+                x={mid[0] + 8}
+                y={mid[1] - 8}
+                className="fill-gp-text font-mono text-[10px]"
+                stroke="#0b0c0e"
+                strokeWidth="3"
+                paintOrder="stroke"
+              >
+                {flow.kw} kW
+              </text>
+            )}
           </g>
         );
       })}
@@ -604,7 +648,13 @@ export default function LabScene({ config, selected, onSelect }: Props) {
       </Hotspot>
 
       {ASSET_IDS.map((id) => (
-        <Tag key={id} id={id} config={config} selected={sel(id)} />
+        <Tag
+          key={id}
+          id={id}
+          config={config}
+          frame={frame}
+          selected={sel(id)}
+        />
       ))}
 
       <text
@@ -613,8 +663,9 @@ export default function LabScene({ config, selected, onSelect }: Props) {
         textAnchor="middle"
         className="fill-gp-faint font-mono text-[10px] tracking-widest"
       >
-        SYNTHETIC CUMMINS-INSPIRED REPRESENTATION · CONFIGURED TOPOLOGY, NOT
-        LIVE POWER FLOW
+        {frame
+          ? (frameCaption ?? "SIMULATED PLAYBACK")
+          : "SYNTHETIC CUMMINS-INSPIRED REPRESENTATION · CONFIGURED TOPOLOGY, NOT LIVE POWER FLOW"}
       </text>
     </svg>
   );

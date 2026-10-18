@@ -4,6 +4,7 @@ import type {
   FacilitiesResponse,
   SavedVersion,
   SessionResponse,
+  StartupCheckEvidence,
   SystemConfigV1,
 } from "./types";
 
@@ -152,6 +153,21 @@ export function saveVersion(
       body: JSON.stringify(payload),
     },
   );
+}
+
+/** Stateless: evaluates a saved version; the server reads the equipment values. */
+export function runStartupCheck(
+  configurationId: string,
+  versionNumber: number,
+): Promise<StartupCheckEvidence> {
+  return request<StartupCheckEvidence>("/demo/startup-check", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      configuration_id: configurationId,
+      version_number: versionNumber,
+    }),
+  });
 }
 
 /**

@@ -208,3 +208,35 @@ Flaky test found and fixed during A-06: an A-05 test asserted `"121" not in resp
 Manual check (2026-10-18): uvicorn with `FRONTEND_ORIGINS=http://localhost:3100` on the Docker test database behind the unmodified local `next dev` rewrite. A `POST` with the cookie and `Origin: http://localhost:3100` gave `201` with `Cache-Control: no-store` and `Vary: Cookie` (plus Next's `Accept-Encoding`); the identical retry gave `200` with the same version; `Origin: https://evil.example` gave `403`; `GET /current` returned the saved version. Not verified: Vercel to Render in a deployed environment, and the production `FRONTEND_ORIGINS` value.
 
 GitHub Actions (run 39136691225, commit `d117df2`): Backend Checks and Frontend Checks succeeded; backend `663 passed, 1 warning`, none skipped; frontend 2 tests passed.
+
+### A-07 frontend configuration editor and map/lab shell (local, 2026-10-18, commit `b79d012`)
+
+| Check | Result |
+|---|---|
+| `npm run format:check`, `lint`, `typecheck`, `test`, `build` | All passed; `vitest`: 4 files, 21 tests (projection against independently computed d3 values, API client, `useWorkspaceConfig` save/409/422/401/503, and the map to lab to G1 to save component flow) |
+| Browser walkthrough (Chrome via Playwright, Next dev on :3000, FastAPI on :8000, disposable Docker `postgres:17` on :55432 with migrations and the local facility seed; never Neon) | Map shows three markers; Fridley enters the lab; G1 5 s to 15 s saved as v2; a full page reload showed 15 s and v2 from `/current`; 121 gave a server 422 with the draft kept; a second tab saving first gave the 409 state with the draft kept until an explicit reload; clearing cookies then saving gave the session-expired state with the draft kept, and Start new session kept the draft; aborted network gave the outage state with the draft kept; keyboard Enter selected G1 |
+| Not verified | Deployed Vercel to Render path, production `FRONTEND_ORIGINS`, Neon, Safari/Firefox, real touch devices, screen reader behavior, CI on this change (see below) |
+
+GitHub Actions (run 39139803047, commit `b79d012`): Backend Checks and Frontend Checks succeeded; backend `663 passed, 1 warning`; frontend 4 files, 21 tests passed.
+
+Not covered by automated tests: the map-to-lab CSS transition and the isometric drawing (checked by screenshot only).
+
+### Startup check (local Docker, `postgres:17`, 2026-10-18)
+
+| Check | Result |
+|---|---|
+| `ruff format --check` / `ruff check` on `app tests` | Clean |
+| `pytest -q` with the Docker database | 1323 passed after the comparison slice: 25 hand-calculated model tests, 2 depletion-at-transfer tests, 588 frame-consistency grid cases, 43 PostgreSQL endpoint tests (ownership, immutability, no writes, byte-identical repeats, validation, origin, stored-data faults), 2 recorded-fixture tests |
+| Mutation checks | Readiness measured at transfer, strict threshold, no inverter cap, G2 affecting the result, depletion ignored, minimum SoC ignored, workspace scope removed, read-only guard removed, Origin check removed: all caught |
+| Manual (Next proxy, local Postgres) | v1 gave 0.25 kWh bridge energy, both requirements passing; after saving v2 (15 s) v2 gave 0.75 kWh, readiness FAIL, continuity PASS; foreign origin 403; no cookie 401; repeated calls byte-identical |
+
+GitHub Actions run 39141348897 (commit `cd09696`): both jobs succeeded; backend `1321 passed`, frontend 21 tests.
+
+### Comparison UI (local, 2026-10-18)
+
+| Check | Result |
+|---|---|
+| Frontend format, lint, typecheck, build | Passed |
+| `vitest` | 5 files, 36 tests (the comparison file has 15: live run, v1-only note, dirty-draft block, stale label, assumptions and events, frame-by-frame playback, recorded fallback with no simulation request, 401/403/404/500/503 and network errors) |
+| Browser walkthrough (Chrome, local Postgres, never Neon) | v1-only explanation; Run disabled while unsaved; v1 versus v2 live comparison; five-frame playback; aborted API shows the error with the draft kept; recorded demo shows no live label; laptop viewports 1366x768 and 1280x720 checked for timeline readability |
+| Not verified | Deployed Vercel to Render path, Neon, browsers other than Chrome, touch devices, screen readers |

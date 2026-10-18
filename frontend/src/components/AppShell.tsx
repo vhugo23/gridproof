@@ -9,11 +9,14 @@ import {
 } from "react";
 import { useFacilities } from "@/lib/useFacilities";
 import { useWorkspaceConfig } from "@/lib/useWorkspaceConfig";
+import { usePlayback } from "@/lib/usePlayback";
+import { useStartupComparison } from "@/lib/useStartupComparison";
 import type { Facility } from "@/lib/types";
 import FacilityMap from "./map/FacilityMap";
 import LabScene from "./lab/LabScene";
 import type { AssetId } from "./lab/assets";
 import Inspector, { SavePanel } from "./inspector/Inspector";
+import ComparePanel, { type Side } from "./compare/ComparePanel";
 
 const LAB_HASH = "#fridley-lab";
 
@@ -90,6 +93,12 @@ export default function AppShell() {
     retry: retryFacilities,
   } = useFacilities();
   const ws = useWorkspaceConfig(inLab);
+  const comparison = useStartupComparison();
+  const [side, setSide] = useState<Side>("modified");
+  const playedFrames = comparison.result
+    ? comparison.result[side].frames
+    : null;
+  const playback = usePlayback(playedFrames);
 
   useEffect(
     () => () => {
@@ -253,6 +262,16 @@ export default function AppShell() {
                 config={ws.draft}
                 selected={selected}
                 onSelect={setSelected}
+                frame={
+                  playedFrames && playback.index !== null
+                    ? playedFrames[playback.index]
+                    : null
+                }
+                frameCaption={
+                  comparison.result
+                    ? `${comparison.result.mode === "recorded" ? "RECORDED DEMO PLAYBACK" : "SIMULATED PLAYBACK"} · ${side.toUpperCase()} · EVIDENCE FRAME ${(playback.index ?? 0) + 1}/${playedFrames?.length ?? 0} · NOT LIVE EQUIPMENT DATA`
+                    : undefined
+                }
               />
             </div>
             <aside
@@ -282,6 +301,53 @@ export default function AppShell() {
               />
             </aside>
           </div>
+        )}
+
+        {inLab && (ws.phase === "ready" || ws.phase === "error") && (
+          <ComparePanel
+            status={comparison.status}
+            result={comparison.result}
+            error={comparison.error}
+            latestVersion={server?.latest_version ?? null}
+            sceneAvailable={ws.phase === "ready"}
+            blockedReason={
+              ws.phase !== "ready" || !server
+                ? "The live test needs the backend. Use the recorded demo."
+                : ws.saveStatus === "saving"
+                  ? "Saving…"
+                  : ws.dirty
+                    ? "Save or discard your edits first: the test runs on saved versions only."
+                    : null
+            }
+            onRun={() => {
+              if (!server) return;
+              playback.setIndex(null);
+              void comparison.run(
+                server.configuration_id,
+                server.latest_version,
+              );
+            }}
+            onShowRecorded={() => {
+              playback.setIndex(null);
+              comparison.showRecorded();
+            }}
+            onClear={() => {
+              playback.setIndex(null);
+              comparison.clear();
+            }}
+            playback={{
+              side,
+              onSide: (next) => {
+                playback.setIndex(null);
+                setSide(next);
+              },
+              index: playback.index,
+              playing: playback.playing,
+              onIndex: playback.setIndex,
+              onPlay: playback.play,
+              onPause: playback.pause,
+            }}
+          />
         )}
       </main>
       <Footer />

@@ -1,0 +1,520 @@
+{
+  "recorded": true,
+  "generated_by": "backend/tests/test_recorded_fixture.py via run_startup_check",
+  "baseline": {
+    "model_version": "startup-check-v1",
+    "source": {
+      "configuration_id": "00000000-0000-4000-8000-0000000000c1",
+      "version_id": "00000000-0000-4000-8000-000000000001",
+      "version_number": 1,
+      "schema_version": "config-v1"
+    },
+    "scenario": {
+      "id": "utility_outage_g1_startup",
+      "horizon_ms": 300000,
+      "outage_at_ms": 0,
+      "outage_detection_ms": 0,
+      "transfer_delay_ms": 0,
+      "commanded_generators": ["g1"]
+    },
+    "assumptions": [
+      {
+        "id": "A1",
+        "text": "The utility is lost at t = 0 and stays lost for the 300 s horizon."
+      },
+      {
+        "id": "A2",
+        "text": "Only G1 receives a start command. G2 is not commanded in this scenario even when enabled; its settings do not affect the result."
+      },
+      {
+        "id": "A3",
+        "text": "Outage detection takes 0 ms: the G1 start command is issued at the outage instant."
+      },
+      {
+        "id": "A4",
+        "text": "G1 startup_delay_s is the time from the start command to G1 being ready to accept load."
+      },
+      {
+        "id": "A5",
+        "text": "Generator readiness and load transfer are separate events. Transfer takes 0 ms after readiness (simplification: instantaneous transfer)."
+      },
+      {
+        "id": "A6",
+        "text": "The battery inverter supplies the critical load from the outage instant with no interruption (simplification: no ride-through gap)."
+      },
+      {
+        "id": "A7",
+        "text": "After transfer G1 supplies up to its rated power; the battery supplies any residual load up to its inverter rating and remaining energy."
+      },
+      {
+        "id": "A8",
+        "text": "Available battery energy = usable_kwh x (initial_soc_pct - min_soc_pct) / 100, with no conversion losses and no recharging."
+      },
+      {
+        "id": "A9",
+        "text": "The critical load is constant at critical_kw. Unserved energy is demand supplied by neither G1 nor the battery."
+      },
+      {
+        "id": "A10",
+        "text": "Time and energy are tracked as exact integers (ms, kW*ms). Displayed kWh (6 decimals) and SoC (4 decimals) are rounded; requirements use the exact values."
+      },
+      {
+        "id": "A11",
+        "text": "Events with equal timestamps are ordered: utility_outage, start_generator, battery_depleted, g1_ready, g1_transfer_complete, horizon_reached. Events at or before the 300 s horizon are recorded."
+      },
+      {
+        "id": "A12",
+        "text": "battery_depleted is recorded at the first whole millisecond by which all available battery energy has been supplied while power is still requested; it is ordered before generator events at that timestamp. Frames are discrete state snapshots taken right after each event, not energy-integration intervals; energy metrics come from exact integer accounting, not from frames."
+      },
+      {
+        "id": "A13",
+        "text": "Synthetic, simplified demonstration model. Not Cummins equipment data and not a prediction of real equipment performance."
+      }
+    ],
+    "inputs": {
+      "g1_enabled": true,
+      "g1_startup_delay_s": 5,
+      "g1_rated_kw": 250,
+      "g2_enabled": true,
+      "g2_startup_delay_s": 5,
+      "g2_used": false,
+      "load_kw": 180,
+      "battery_inverter_kw": 250,
+      "battery_usable_kwh": 500,
+      "battery_min_soc_pct": 20,
+      "battery_initial_soc_pct": 80,
+      "battery_available_kwh": 300.0
+    },
+    "events": [
+      {
+        "id": "evt-01",
+        "at_ms": 0,
+        "type": "utility_outage",
+        "asset": "utility",
+        "description": "Utility supply lost."
+      },
+      {
+        "id": "evt-02",
+        "at_ms": 0,
+        "type": "start_generator",
+        "asset": "g1",
+        "description": "Start command issued to G1."
+      },
+      {
+        "id": "evt-03",
+        "at_ms": 5000,
+        "type": "g1_ready",
+        "asset": "g1",
+        "description": "G1 is ready to accept load."
+      },
+      {
+        "id": "evt-04",
+        "at_ms": 5000,
+        "type": "g1_transfer_complete",
+        "asset": "g1",
+        "description": "Critical load transferred to G1."
+      },
+      {
+        "id": "evt-05",
+        "at_ms": 300000,
+        "type": "horizon_reached",
+        "asset": "system",
+        "description": "End of the 300 s evaluation horizon."
+      }
+    ],
+    "frames": [
+      {
+        "event_id": "evt-01",
+        "at_ms": 0,
+        "states": {
+          "utility": "lost",
+          "g1": "starting",
+          "g2": "not_commanded",
+          "battery": "discharging",
+          "load": "served"
+        },
+        "power_kw": {
+          "g1_kw": 0,
+          "battery_kw": 180,
+          "load_kw": 180,
+          "served_kw": 180,
+          "unserved_kw": 0
+        },
+        "battery_soc_pct": 80.0,
+        "battery_energy_remaining_kwh": 300.0
+      },
+      {
+        "event_id": "evt-02",
+        "at_ms": 0,
+        "states": {
+          "utility": "lost",
+          "g1": "starting",
+          "g2": "not_commanded",
+          "battery": "discharging",
+          "load": "served"
+        },
+        "power_kw": {
+          "g1_kw": 0,
+          "battery_kw": 180,
+          "load_kw": 180,
+          "served_kw": 180,
+          "unserved_kw": 0
+        },
+        "battery_soc_pct": 80.0,
+        "battery_energy_remaining_kwh": 300.0
+      },
+      {
+        "event_id": "evt-03",
+        "at_ms": 5000,
+        "states": {
+          "utility": "lost",
+          "g1": "ready",
+          "g2": "not_commanded",
+          "battery": "discharging",
+          "load": "served"
+        },
+        "power_kw": {
+          "g1_kw": 0,
+          "battery_kw": 180,
+          "load_kw": 180,
+          "served_kw": 180,
+          "unserved_kw": 0
+        },
+        "battery_soc_pct": 79.95,
+        "battery_energy_remaining_kwh": 299.75
+      },
+      {
+        "event_id": "evt-04",
+        "at_ms": 5000,
+        "states": {
+          "utility": "lost",
+          "g1": "online",
+          "g2": "not_commanded",
+          "battery": "standby",
+          "load": "served"
+        },
+        "power_kw": {
+          "g1_kw": 180,
+          "battery_kw": 0,
+          "load_kw": 180,
+          "served_kw": 180,
+          "unserved_kw": 0
+        },
+        "battery_soc_pct": 79.95,
+        "battery_energy_remaining_kwh": 299.75
+      },
+      {
+        "event_id": "evt-05",
+        "at_ms": 300000,
+        "states": {
+          "utility": "lost",
+          "g1": "online",
+          "g2": "not_commanded",
+          "battery": "standby",
+          "load": "served"
+        },
+        "power_kw": {
+          "g1_kw": 180,
+          "battery_kw": 0,
+          "load_kw": 180,
+          "served_kw": 180,
+          "unserved_kw": 0
+        },
+        "battery_soc_pct": 79.95,
+        "battery_energy_remaining_kwh": 299.75
+      }
+    ],
+    "metrics": {
+      "g1_ready_ms": 5000,
+      "g1_transfer_complete_ms": 5000,
+      "battery_depleted_ms": null,
+      "battery_bridge_energy_kwh": 0.25,
+      "battery_energy_delivered_kwh": 0.25,
+      "unserved_energy_kwh": 0.0,
+      "battery_peak_kw": 180,
+      "battery_soc_end_pct": 79.95
+    },
+    "requirements": [
+      {
+        "requirement_id": "G1_READY_WITHIN_10S",
+        "type": "asset_ready_within",
+        "status": "pass",
+        "comparator": "<=",
+        "observed": 5000,
+        "threshold": 10000,
+        "unit": "ms",
+        "evidence_event_ids": ["evt-02", "evt-03"],
+        "explanation": "G1 was ready 5000 ms after the outage; the limit is 10000 ms."
+      },
+      {
+        "requirement_id": "CRITICAL_LOAD_CONTINUITY",
+        "type": "unserved_energy_at_most",
+        "status": "pass",
+        "comparator": "<=",
+        "observed": 0.0,
+        "threshold": 0,
+        "unit": "kWh",
+        "evidence_event_ids": ["evt-01", "evt-05"],
+        "explanation": "The critical load was fully served from the outage to the end of the horizon."
+      }
+    ]
+  },
+  "modified": {
+    "model_version": "startup-check-v1",
+    "source": {
+      "configuration_id": "00000000-0000-4000-8000-0000000000c1",
+      "version_id": "00000000-0000-4000-8000-000000000002",
+      "version_number": 2,
+      "schema_version": "config-v1"
+    },
+    "scenario": {
+      "id": "utility_outage_g1_startup",
+      "horizon_ms": 300000,
+      "outage_at_ms": 0,
+      "outage_detection_ms": 0,
+      "transfer_delay_ms": 0,
+      "commanded_generators": ["g1"]
+    },
+    "assumptions": [
+      {
+        "id": "A1",
+        "text": "The utility is lost at t = 0 and stays lost for the 300 s horizon."
+      },
+      {
+        "id": "A2",
+        "text": "Only G1 receives a start command. G2 is not commanded in this scenario even when enabled; its settings do not affect the result."
+      },
+      {
+        "id": "A3",
+        "text": "Outage detection takes 0 ms: the G1 start command is issued at the outage instant."
+      },
+      {
+        "id": "A4",
+        "text": "G1 startup_delay_s is the time from the start command to G1 being ready to accept load."
+      },
+      {
+        "id": "A5",
+        "text": "Generator readiness and load transfer are separate events. Transfer takes 0 ms after readiness (simplification: instantaneous transfer)."
+      },
+      {
+        "id": "A6",
+        "text": "The battery inverter supplies the critical load from the outage instant with no interruption (simplification: no ride-through gap)."
+      },
+      {
+        "id": "A7",
+        "text": "After transfer G1 supplies up to its rated power; the battery supplies any residual load up to its inverter rating and remaining energy."
+      },
+      {
+        "id": "A8",
+        "text": "Available battery energy = usable_kwh x (initial_soc_pct - min_soc_pct) / 100, with no conversion losses and no recharging."
+      },
+      {
+        "id": "A9",
+        "text": "The critical load is constant at critical_kw. Unserved energy is demand supplied by neither G1 nor the battery."
+      },
+      {
+        "id": "A10",
+        "text": "Time and energy are tracked as exact integers (ms, kW*ms). Displayed kWh (6 decimals) and SoC (4 decimals) are rounded; requirements use the exact values."
+      },
+      {
+        "id": "A11",
+        "text": "Events with equal timestamps are ordered: utility_outage, start_generator, battery_depleted, g1_ready, g1_transfer_complete, horizon_reached. Events at or before the 300 s horizon are recorded."
+      },
+      {
+        "id": "A12",
+        "text": "battery_depleted is recorded at the first whole millisecond by which all available battery energy has been supplied while power is still requested; it is ordered before generator events at that timestamp. Frames are discrete state snapshots taken right after each event, not energy-integration intervals; energy metrics come from exact integer accounting, not from frames."
+      },
+      {
+        "id": "A13",
+        "text": "Synthetic, simplified demonstration model. Not Cummins equipment data and not a prediction of real equipment performance."
+      }
+    ],
+    "inputs": {
+      "g1_enabled": true,
+      "g1_startup_delay_s": 15,
+      "g1_rated_kw": 250,
+      "g2_enabled": true,
+      "g2_startup_delay_s": 5,
+      "g2_used": false,
+      "load_kw": 180,
+      "battery_inverter_kw": 250,
+      "battery_usable_kwh": 500,
+      "battery_min_soc_pct": 20,
+      "battery_initial_soc_pct": 80,
+      "battery_available_kwh": 300.0
+    },
+    "events": [
+      {
+        "id": "evt-01",
+        "at_ms": 0,
+        "type": "utility_outage",
+        "asset": "utility",
+        "description": "Utility supply lost."
+      },
+      {
+        "id": "evt-02",
+        "at_ms": 0,
+        "type": "start_generator",
+        "asset": "g1",
+        "description": "Start command issued to G1."
+      },
+      {
+        "id": "evt-03",
+        "at_ms": 15000,
+        "type": "g1_ready",
+        "asset": "g1",
+        "description": "G1 is ready to accept load."
+      },
+      {
+        "id": "evt-04",
+        "at_ms": 15000,
+        "type": "g1_transfer_complete",
+        "asset": "g1",
+        "description": "Critical load transferred to G1."
+      },
+      {
+        "id": "evt-05",
+        "at_ms": 300000,
+        "type": "horizon_reached",
+        "asset": "system",
+        "description": "End of the 300 s evaluation horizon."
+      }
+    ],
+    "frames": [
+      {
+        "event_id": "evt-01",
+        "at_ms": 0,
+        "states": {
+          "utility": "lost",
+          "g1": "starting",
+          "g2": "not_commanded",
+          "battery": "discharging",
+          "load": "served"
+        },
+        "power_kw": {
+          "g1_kw": 0,
+          "battery_kw": 180,
+          "load_kw": 180,
+          "served_kw": 180,
+          "unserved_kw": 0
+        },
+        "battery_soc_pct": 80.0,
+        "battery_energy_remaining_kwh": 300.0
+      },
+      {
+        "event_id": "evt-02",
+        "at_ms": 0,
+        "states": {
+          "utility": "lost",
+          "g1": "starting",
+          "g2": "not_commanded",
+          "battery": "discharging",
+          "load": "served"
+        },
+        "power_kw": {
+          "g1_kw": 0,
+          "battery_kw": 180,
+          "load_kw": 180,
+          "served_kw": 180,
+          "unserved_kw": 0
+        },
+        "battery_soc_pct": 80.0,
+        "battery_energy_remaining_kwh": 300.0
+      },
+      {
+        "event_id": "evt-03",
+        "at_ms": 15000,
+        "states": {
+          "utility": "lost",
+          "g1": "ready",
+          "g2": "not_commanded",
+          "battery": "discharging",
+          "load": "served"
+        },
+        "power_kw": {
+          "g1_kw": 0,
+          "battery_kw": 180,
+          "load_kw": 180,
+          "served_kw": 180,
+          "unserved_kw": 0
+        },
+        "battery_soc_pct": 79.85,
+        "battery_energy_remaining_kwh": 299.25
+      },
+      {
+        "event_id": "evt-04",
+        "at_ms": 15000,
+        "states": {
+          "utility": "lost",
+          "g1": "online",
+          "g2": "not_commanded",
+          "battery": "standby",
+          "load": "served"
+        },
+        "power_kw": {
+          "g1_kw": 180,
+          "battery_kw": 0,
+          "load_kw": 180,
+          "served_kw": 180,
+          "unserved_kw": 0
+        },
+        "battery_soc_pct": 79.85,
+        "battery_energy_remaining_kwh": 299.25
+      },
+      {
+        "event_id": "evt-05",
+        "at_ms": 300000,
+        "states": {
+          "utility": "lost",
+          "g1": "online",
+          "g2": "not_commanded",
+          "battery": "standby",
+          "load": "served"
+        },
+        "power_kw": {
+          "g1_kw": 180,
+          "battery_kw": 0,
+          "load_kw": 180,
+          "served_kw": 180,
+          "unserved_kw": 0
+        },
+        "battery_soc_pct": 79.85,
+        "battery_energy_remaining_kwh": 299.25
+      }
+    ],
+    "metrics": {
+      "g1_ready_ms": 15000,
+      "g1_transfer_complete_ms": 15000,
+      "battery_depleted_ms": null,
+      "battery_bridge_energy_kwh": 0.75,
+      "battery_energy_delivered_kwh": 0.75,
+      "unserved_energy_kwh": 0.0,
+      "battery_peak_kw": 180,
+      "battery_soc_end_pct": 79.85
+    },
+    "requirements": [
+      {
+        "requirement_id": "G1_READY_WITHIN_10S",
+        "type": "asset_ready_within",
+        "status": "fail",
+        "comparator": "<=",
+        "observed": 15000,
+        "threshold": 10000,
+        "unit": "ms",
+        "evidence_event_ids": ["evt-02", "evt-03"],
+        "explanation": "G1 was ready 15000 ms after the outage; the limit is 10000 ms."
+      },
+      {
+        "requirement_id": "CRITICAL_LOAD_CONTINUITY",
+        "type": "unserved_energy_at_most",
+        "status": "pass",
+        "comparator": "<=",
+        "observed": 0.0,
+        "threshold": 0,
+        "unit": "kWh",
+        "evidence_event_ids": ["evt-01", "evt-05"],
+        "explanation": "The critical load was fully served from the outage to the end of the horizon."
+      }
+    ]
+  }
+}

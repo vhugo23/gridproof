@@ -84,3 +84,23 @@ Documentation only; no application code, migrations or CI changes.
 
 - Added `save_version` to `app/services/configurations.py` (workspace-scoped row lock, stored-data validation, optimistic concurrency, best-effort replay, atomic insert, name and pointer update) and the `POST` route in `app/routes/configurations.py` (Origin allowlist, media type, 256 KiB body limit on actual bytes, strict JSON parsing, sanitized errors). Added the optional `frontend_origins` setting (`FRONTEND_ORIGINS`). `docs/05-api-contracts.md` is v1.5. Decision D-22. No migration, model, dependency, CI or frontend change; no Neon access.
 - 109 PostgreSQL tests added; twelve deliberate breakages were each caught. A flaky A-05 test (digits matching inside a random request id) was fixed. GitHub Actions run 39136691225: both jobs green, 663 backend and 2 frontend tests passed. Nothing was seeded on Neon or deployed.
+
+## 2026-10-18 — Conference-demo execution (`b79d012`)
+
+Strategy changed to a 10-day SHPE conference demo; scope and order approved by the project owner. Committed as `b79d012` (CI run 39139803047 green):
+
+- A-07 frontend: typed API client (`frontend/src/lib/api.ts`), `useWorkspaceConfig` (lazy session bootstrap, draft/dirty tracking, save with `expected_version`, server confirmation via `GET /configurations/current`, 409/422/401/503 handling that never discards the draft), SVG map generated once from Natural Earth data (public domain), isometric synthetic Fridley lab, inspector with fixed vs editable fields.
+- Later the same day: the startup-check simulator and the comparison UI (entries below).
+
+## 2026-10-18 — Deterministic startup check (`cd09696`)
+
+- Added `app/domain/startup_check.py` (pure model, exact integer ms and kW*ms, 300 s horizon, readiness and transfer as separate events), `app/services/startup_check.py` (workspace-scoped read of an immutable version inside a read-only transaction), `POST /api/v1/demo/startup-check` (`app/routes/demo.py`), and moved the Origin check to `app/core/origin.py` (behavior unchanged; one A-06 test fixture retargeted). Documented as doc 05 API-16 and decision D-23.
+- Review found one frame inconsistency (battery emptied at the same millisecond as transfer showed battery power with zero energy). Fixed: depletion is ordered before generator events at that timestamp and an empty battery delivers 0 kW in every frame. A grid of 588 combinations now checks every frame.
+- Mutation checks: nine of ten deliberate breakages were caught (the tenth was dead logic and was removed). GitHub Actions run 39141348897: both jobs green, 1321 backend and 21 frontend tests.
+
+## 2026-10-18 — Comparison UI and recorded fallback
+
+- Frontend: typed evidence and API call, `useStartupComparison` (baseline v1 plus latest version in parallel; one card with an explanatory note when only v1 exists), `usePlayback` (frame stepping only), `ComparePanel`, `Timeline`, frame-driven lab scene (`frameView.ts`). Metrics, requirement statuses, states and highlighted connections come only from the returned evidence or the recorded fixture; no energy is recomputed from frames.
+- Recorded fallback: `frontend/src/lib/recorded/startup-check-5s-vs-15s.json`, generated from the simulator; `backend/tests/test_recorded_fixture.py` fails if it drifts. It is labeled as recorded and makes no startup-check request.
+- Failure handling for 401, 403, 404, 500, 503 and network errors leaves the configuration and unsaved draft untouched.
+- Nothing was seeded on Neon or deployed.
