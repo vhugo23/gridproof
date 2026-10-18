@@ -63,3 +63,14 @@ Documentation only; no application code, migrations or CI changes.
 - Added `app/domain/system_config.py` (frozen strict models, default Fridley config, snapshot helpers, safe validation details, `ConfigurationName`) and schema, name and PostgreSQL storage tests. `docs/05-api-contracts.md` is now 1.2 (fixed fields, integers, load-demand distinction, name rules).
 - No endpoint, schema, migration, dependency, CI or frontend change; no Neon access. Decision D-18 recorded.
 - Review added `load_snapshot(schema_version, data)`: stored snapshots with any version other than `config-v1` raise `UnsupportedSchemaVersion`. GitHub Actions run 39130740308: both jobs green, 435 backend tests passed. Nothing was seeded on Neon or deployed.
+
+## 2026-10-18 — A-03 atomic workspace initialization (`8cf9a6b`)
+
+- Added `app/services/workspaces.py` (`initialize_workspace`, token generation and SHA-256 hashing) with token unit tests and PostgreSQL tests for success, expiry, token storage, transaction ownership and rollback at each stage. Decisions D-19 recorded.
+- The caller owns the outer transaction; the service requires one, uses a savepoint, never commits. Failures were injected with temporary database triggers; four deliberate breakages of the service (no savepoint, plaintext token, service commit, wrong pointer) were each caught by the tests.
+- GitHub Actions run 39131471726: both jobs green, 462 backend tests passed. Nothing was seeded on Neon or deployed. A-02 documentation closure is commit `bd6b3d8`.
+
+## 2026-10-18 — A-04 `GET /api/v1/session` (uncommitted)
+
+- Added `app/services/sessions.py` (cookie parsing, reuse, advisory-lock-serialized issuance with a global rolling cap) and `app/routes/session.py`, registered in `app/main.py`. `docs/05-api-contracts.md` is v1.3 (fixed-expiry wording, cookie attributes, headers, errors, `Retry-After`). Decision D-20. No migration, schema, dependency, CI or frontend change; no Neon access.
+- Added cookie-parser unit tests and PostgreSQL endpoint tests (rollback and commit failures via triggers, expiry, reuse, malformed and duplicate cookies, concurrency, cap, lock timeout, proxy headers, log secrecy). Eight deliberate breakages were each caught. Not committed; CI not yet run.

@@ -1,14 +1,14 @@
 # GridProof — API Contracts
 
 **Document:** `docs/05-api-contracts.md`  
-**Version:** 1.2 · 2026-10-18 (1.2: SystemConfigV1 clarifications; 1.1: API-03 adds `description`; cache and error headers specified)  
+**Version:** 1.3 · 2026-10-18 (1.3: API-02 session cookie, headers, errors and issuance cap specified, fixed-expiry wording; 1.2: SystemConfigV1 clarifications; 1.1: API-03 adds `description`; cache and error headers specified)  
 **Status:** API-first contract for implementation, not a claim that endpoints exist  
 **Depends on:** [PRD](./01-product-requirements.md), [Flows](./02-user-flows-and-acceptance-criteria.md), [Architecture](./03-system-architecture.md), [Database](./04-database-design.md)
 
 ## 1. Conventions and security model
 
 - **Base path:** `/api/v1`; browser calls same-origin Vercel `/api/v1/*`, proxied to FastAPI on Render. HTTPS only. JSON UTF-8 for all bodies except PDF response.
-- **Anonymous demo authentication:** `GET /session` creates/renews a *new* 7-day workspace session or reuses an unexpired cookie. Response sets `gridproof_demo=<opaque>; Secure; HttpOnly; SameSite=Lax; Path=/`. All workspace operations require this cookie. No user accounts or bearer tokens in V1. `GET /health`, `GET /facilities`, and `GET /labs/fridley/assets` are public. `GET /scenarios` requires workspace because it includes personal drafts.
+- **Anonymous demo authentication:** `GET /session` creates a *new* workspace with a fixed 7-day expiry (never renewed) or reuses an unexpired cookie. A newly issued session sets `gridproof_demo=<opaque>; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=<remaining seconds>` (no `Domain`). All workspace operations require this cookie. No user accounts or bearer tokens in V1. `GET /health`, `GET /facilities`, and `GET /labs/fridley/assets` are public. `GET /scenarios` requires workspace because it includes personal drafts.
 - **Workspace ownership:** derived from cookie, never accepted from client. Workspace mismatch returns `404 RESOURCE_NOT_FOUND`. Expired/missing cookie → `401 WORKSPACE_EXPIRED` (or `SESSION_REQUIRED` if first access). No silent session recreation on protected routes.
 - **Unsafe requests:** `Origin` validation against configured frontend origins; `Content-Type: application/json`; JSON schema validation via Pydantic, no extra fields; no permissive credentialed CORS. POST `/runs` requires `Idempotency-Key` header (opaque 16–128 printable ASCII characters).
 - **IDs:** UUID strings for mutable/persisted entities; public stable facility slug for catalog. Times are ISO 8601 UTC. Simulation relative time is integer milliseconds in stored/replay events (`at_ms`), while edit UI seconds are numeric (`*_s`). Power kW and energy kWh use explicit units.
@@ -95,9 +95,12 @@ The example's empty snapshots are **abbreviation placeholders**, not valid persi
 
 ### API-02 `GET /session`
 - **Auth:** public bootstrap; may accept existing cookie. **Params/body:** none.
-- **200:** `{ "workspace_id": "<uuid>", "expires_at": "2026-10-24T16:00:00Z", "is_new": true }` plus secure session cookie if newly issued. Reusing valid cookie returns `is_new:false` and unchanged fixed expiry.
-- **Rules:** cryptographically random session token; store hash only; create initial Fridley configuration v1 transactionally. Expired cookie creates a **new** workspace only on explicit `/session` bootstrap, never while fetching old run routes. Rate-limit issuance.
-- **Errors:** `429 SESSION_RATE_LIMITED`, `503 DATABASE_UNAVAILABLE`, `500 INTERNAL_ERROR`.
+- **200:** `{ "workspace_id": "<uuid>", "expires_at": "2026-10-24T16:00:00Z", "is_new": true }` plus secure session cookie if newly issued. Reusing valid cookie returns `is_new:false`, the unchanged fixed expiry and **no** `Set-Cookie`. The token never appears in the body.
+- **Headers (all responses, including errors):** `Cache-Control: no-store`, `Vary: Cookie`, `X-Request-ID`. Cookie attributes: `HttpOnly; Secure` (always, regardless of proxy headers); `SameSite=Lax; Path=/`; host-only (no `Domain`); `Max-Age` = seconds until the fixed expiry.
+- **Cookie handling:** a missing, malformed (not a 43-character URL-safe token), unknown or expired cookie, or more than one `gridproof_demo` cookie, is treated as no session and a new workspace is issued; no value is chosen from duplicates.
+- **Side effects:** documented exception to GET safety: a request without a valid session creates a workspace. Clients call it explicitly (no prefetching). The cookie is set only after the creating transaction committed.
+- **Rules:** cryptographically random session token; store hash only; create initial Fridley configuration v1 transactionally. Expired cookie creates a **new** workspace only on explicit `/session` bootstrap, never while fetching old run routes. Issuance is capped globally at 120 new workspaces per rolling 60 seconds (workspace `created_at`), serialized with a transaction-scoped PostgreSQL advisory lock with bounded lock and statement timeouts. Reusing a valid session is never limited or blocked by the cap.
+- **Errors:** `429 SESSION_RATE_LIMITED` (`Retry-After: 60`; no cookie); `503 DATABASE_UNAVAILABLE` (database failure, unseeded facility catalog, or issuance lock wait timeout; the lock timeout also sends `Retry-After: 5`; generic message, no cookie, no rows left behind); `500 INTERNAL_ERROR`.
 
 ### API-03 `GET /facilities`
 - **Auth:** public. **Params/body:** none.

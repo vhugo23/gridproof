@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.routes.facilities import router as facilities_router
+from app.routes.session import router as session_router
 
 app = FastAPI(
     title="GridProof API",
@@ -15,6 +16,7 @@ app = FastAPI(
 )
 
 app.include_router(facilities_router)
+app.include_router(session_router)
 
 
 @app.get("/api/v1/health")

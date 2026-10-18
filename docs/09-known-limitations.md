@@ -8,7 +8,7 @@
 
 | ID | Limitation | Planned resolution |
 |---|---|---|
-| L-01 | The only backend routes are `GET /api/v1/health` and `GET /api/v1/health/database`. No session, facility, configuration, scenario or run endpoints exist. | Phase A onward |
+| L-01 | Backend routes: health, `GET /api/v1/facilities` and `GET /api/v1/session`. No configuration, scenario or run endpoints exist. | Phase A onward |
 | L-02 | `facility_catalog` is empty in Neon. The seed module exists (A-01) but has not been applied to Neon; that needs separate approval. | Apply with owner approval |
 | L-03 | `GET /api/v1/health` returns `{status, service}`. The approved contract (doc 05 API-01) also requires `version` and `model_version`. | C-11 |
 | L-04 | The original two backend tests mock the database. F-11 added real-PostgreSQL schema, migration and transaction tests, but CI confirmation is pending and there is no application code to test yet. | Confirm CI; extend with A-01 onward |
@@ -19,12 +19,23 @@
 
 ## Workspace initialization notes (A-03)
 
-- The service is not reachable yet: `GET /api/v1/session`, the cookie, token lookup, expiry enforcement on reads, session reuse and rate limiting are A-04 and later.
+- The service is reachable through `GET /api/v1/session` (A-04). Workspace-scoped routes (token lookup and expiry enforcement on protected reads) are A-05 and later.
 - A fresh database (including Neon) needs the facility seed applied before any workspace can be created (`CatalogNotSeededError`). Seeding Neon still needs separate approval.
 - Only the SHA-256 digest of the token is stored (decision D-19). A server-side pepper was not adopted; adding one later is a security change that needs approval.
 - A caller that forgets to commit loses the workspace; A-04 must commit after a successful call and return the token only then.
 - Cleanup of expired workspaces and their children is still undefined (docs 03/04 leave the mechanism open).
 - Database error messages (for example a duplicate-hash violation) can contain the stored hash, never the plaintext token; A-04 must still keep such messages out of responses.
+
+## Session endpoint notes (A-04)
+
+- The issuance cap is global (120 per rolling 60 s), not per client. One abuser can make new demo sessions unavailable for everyone for up to a minute; existing sessions keep working.
+- The cap counts `created_at` without an index (`ix_workspaces_expiry` covers only `expires_at`). Acceptable at demo scale; revisit with an index migration if the table grows large. Issuance is serialized by an advisory lock, so throughput is bounded to one issuing transaction at a time.
+- The window uses the database transaction clock; a request that waited for the lock measures from its own transaction start.
+- A commit with an unknown outcome (connection lost during commit) returns 503 without a cookie and may leave an unreachable workspace row; it expires and counts toward the cap. Cleanup of expired rows is still undefined.
+- `GET /session` creates data (documented exception). Cross-site requests can trigger issuance within the cap; the response carries nothing worth stealing and the cookie is `SameSite=Lax`.
+- `Secure` cookies work on `http://localhost` in Chrome and Firefox but not in Safari; use HTTPS or another browser for local manual checks.
+- Cookie forwarding through the deployed Vercel rewrite to Render is still unproven. A-04 tests the backend behind forwarded headers and was checked by hand through the local `next dev` rewrite (`Set-Cookie`, `Cache-Control: no-store` and `Vary: Cookie` preserved; Next appends `Accept-Encoding` to `Vary`; reuse with the cookie returned `is_new:false`). That local check used the Docker test database, not Vercel or Render. Verify in staging (G-04).
+- An unseeded database makes `/session` return 503 until the facility seed is applied.
 
 ## Configuration schema notes (A-02)
 

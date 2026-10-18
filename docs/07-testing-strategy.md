@@ -46,6 +46,8 @@ docker compose -f backend/docker-compose.test.yml down -v
 | `test_db_safety.py` | The URL guard (accepted and rejected URLs) and that rejection messages never contain the password. Needs no database. |
 | `test_migrations.py` | Single head; upgrade, step-wise upgrade, downgrade, round trip, idempotent upgrade; schema compared with a hand-written specification (columns, defaults, checks, uniques, foreign keys, indexes); model/migration drift (`alembic check` equivalent). |
 | `test_schema_constraints.py` | Every named CHECK (including boundaries), UNIQUE, NOT NULL, foreign key and `ON DELETE RESTRICT`; server defaults; JSONB round trip. |
+| `test_workspace_initialization.py` | A-03 on real PostgreSQL with real commits and separate connections: exact rows, hash-only token storage, exactly seven-day database-clock expiry, two independent workspaces, rejection of a session with no active transaction, no commit by the service (invisible to other connections until the caller commits), caller rollback, and rollback at the workspace, configuration, version and pointer stages (injected with temporary triggers) that keeps the caller's earlier work, unseeded catalog, duplicate token hash, and no plaintext token in logs. |
+| `test_session_api.py` | A-04 on real PostgreSQL through `TestClient` (HTTPS base URL), a fresh session per request, real commits, separate verifying connections: first-visit rows and exact expiry, exact cookie attributes, hash-only storage, reuse without renewal or `Set-Cookie`, expired/unknown/malformed/non-ASCII/duplicate cookies, proxy headers, rollback at each stage and at commit (injected with triggers), unseeded catalog, the cap (limit patched to 1-3), rolling-window boundaries, concurrent issuance (exactly the allowed number), reuse not blocked by the issuance lock, bounded lock timeout, locks released, timeouts not leaking, secrecy in logs. `test_session_cookie_parsing.py` (no database) covers the cookie parser. |
 | `test_system_config_storage.py` | A-02 on real PostgreSQL: the default snapshot and an edited snapshot round-trip through the JSONB column and validate on read (integers stay integers); the default `facility_id` is the seeded interactive facility; every name the validator accepts satisfies the database constraints; tab/newline names show the gap that the validator closes. |
 | `test_facilities_api.py` | A-01b endpoint on real PostgreSQL through `TestClient` with `get_db` overridden to the test session: exact values for the three facilities, exactly 12 keys per facility, only Fridley interactive, approximate-coordinate attribution preserved, `Cache-Control` on 200, no cookie or authentication needed, no workspace or configuration data exposed, empty table → 503 envelope with `no-store`, reflects reseeding. The application's own `SessionLocal` and engine are patched to fail the test if used; one test proves that guard by removing the override. |
 | `test_facility_seed.py` | A-01 seed on real PostgreSQL: exact rows, only Fridley interactive, idempotency, drift repair, unexpected-row abort, foreign-key compatibility, CLI dry run (no connection), `--apply`, remote-host refusal, credential-safe errors, rollback after a failure past the upsert. |
@@ -149,3 +151,30 @@ The CI status of earlier pushes is user-reported, not observed here.
 | `GRIDPROOF_REQUIRE_TEST_DB=1`, no URL | 328 passed, 107 errors (intended; measured before the schema-version tests were added) |
 
 GitHub Actions (run 39130740308, commit `74fe5e2`): Backend Checks and Frontend Checks succeeded; backend `435 passed, 1 warning`, none skipped; frontend 2 tests passed.
+
+### A-03 workspace initialization (local Docker, `postgres:17`, 2026-10-18)
+
+| Check | Result |
+|---|---|
+| `ruff format --check` / `ruff check` on `app tests migrations/env.py` | Clean (36 files) |
+| `pytest -q` with the Docker database | 462 passed (27 new: 7 token tests, 20 PostgreSQL tests), 1 warning; repeated, same result |
+| New files alone; integration files in another order; one test alone | 27; 55; 1 passed |
+| `pytest -q` without `TEST_DATABASE_URL` | 335 passed, 127 skipped |
+| `GRIDPROOF_REQUIRE_TEST_DB=1`, no URL | 335 passed, 127 errors (intended) |
+| Mutation checks (service temporarily broken, then restored byte-identical) | No savepoint: 4 failures. Plaintext token stored: 2. Service commits: 13. Pointer left at 0: 1. |
+
+GitHub Actions (run 39131471726, commit `8cf9a6b`): Backend Checks and Frontend Checks succeeded; backend `462 passed, 1 warning`, none skipped; frontend 2 tests passed.
+
+### A-04 session endpoint (local Docker, `postgres:17`, 2026-10-18)
+
+| Check | Result |
+|---|---|
+| `ruff format --check` / `ruff check` on `app tests migrations/env.py` | Clean (40 files) |
+| `pytest -q` with the Docker database | 519 passed (57 new: 19 cookie-parser tests, 38 PostgreSQL tests), 1 warning; repeated, same result |
+| `pytest -q` without `TEST_DATABASE_URL` | 354 passed, 165 skipped |
+| `GRIDPROOF_REQUIRE_TEST_DB=1`, no URL | 354 passed, 165 errors (intended) |
+| Mutation checks (code temporarily broken, then restored byte-identical) | No advisory lock: 2 failures. Duplicate cookie takes the first: 3. Cap removed: 6. Window counts `expires_at`: 2. No `Vary`: 7. Cookie not `Secure`: 2. Timeouts not transaction-local: 1. Reuse takes the lock: 1. |
+
+Manual check (2026-10-18): backend (uvicorn) on the Docker test database, called directly and through the unmodified local `next dev` rewrite with curl. `Set-Cookie` (`HttpOnly; Secure; SameSite=lax; Path=/; Max-Age`), `Cache-Control: no-store` and `Vary: Cookie` (plus Next's `Accept-Encoding`) arrived intact; a second call with the cookie returned `is_new:false` and no `Set-Cookie`. Not verified: Vercel to Render in a deployed environment.
+
+GitHub Actions has not run for A-04 at the time of writing.
