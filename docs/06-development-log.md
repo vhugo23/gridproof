@@ -45,8 +45,14 @@ Documentation only; no application code, migrations or CI changes.
 - Finding: `ck_configurations_name` does not reject tab/newline-only names (see `09-known-limitations.md`).
 - Decision D-15 recorded. Observed results are in `07-testing-strategy.md`.
 
-## 2026-10-17 — A-01 facility catalog seed (uncommitted)
+## 2026-10-17 — A-01 facility catalog seed (`09a49d6`)
 
 - Added `backend/app/seed/facilities.py` (validated rows, idempotent upsert, CLI with dry run, `--apply`, and `--confirm-host` for remote databases) plus unit and PostgreSQL integration tests.
 - No schema change, migration, dependency, CI change or Neon access. Decision D-16 recorded; roadmap task A-01b (`GET /api/v1/facilities`) added.
 - Source limits are documented in `09-known-limitations.md`.
+- GitHub Actions run 39097553393: both jobs green, 156 backend tests passed. The seed was not run against Neon.
+
+## 2026-10-17 — A-01b public facilities endpoint (uncommitted)
+
+- Added `GET /api/v1/facilities` (`app/routes/facilities.py`, `app/core/errors.py`), router registration in `app/main.py`, and unit and PostgreSQL integration tests. `docs/05-api-contracts.md` is now 1.1 (`description` added; cache and error headers specified).
+- No schema change, migration, dependency, CI change or Neon access. Decision D-17 recorded. Error handling is scoped to the route (no application-wide handler).

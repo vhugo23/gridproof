@@ -17,10 +17,19 @@
 | L-07 | No MapLibre or 3D dependencies. The only page is a status page, and `layout.tsx` still has the default "Create Next App" metadata. | Phases B, E |
 | L-08 | `ConnectionBadge` and its test exist, but no page uses the component. | Reuse or remove when the UI shell is built (E-01) |
 
+## API error handling (A-01b)
+
+- Only `GET /api/v1/facilities` returns the doc 05 error envelope. `/api/v1/health/database` still returns FastAPI's default `{"detail": ...}` on 503, and request-validation (422) and other framework errors keep the default shape. There is no application-wide exception handler (decision D-17); converging the routes is a later task.
+- Request IDs are generated per error response; a client-supplied `X-Request-ID` is ignored.
+
+## Test invocation quirk
+
+- Passing explicit file arguments that interleave `tests/integration/` files with `tests/` files (for example `integration/a.py tests/b.py integration/c.py`) makes pytest 9 lose the integration `conftest.py` for the later group (`fixture 'blank_engine' not found`). Reproduced with files that predate A-01b, so it is not caused by the endpoint code. `pytest -q`, `pytest tests/integration` and groupings that keep integration files together all pass.
+
 ## Facility catalog data (A-01)
 
 - Marker coordinates are **approximate city locations** (Wikipedia: Fridley 45.08417, -93.25667; Seymour 38.95722, -85.89444; Daventry 52.25778, -1.16278), not plant coordinates. No facility-level coordinates were found in public sources, and none were invented. Each `source_note` states this.
-- Source retrieval on 2026-10-17: the Seymour source (`investor.cummins.com`, news/detail/310) was retrieved and its text confirmed. The three `cummins.com` pages used for Fridley and Daventry (`/generators/power-integration-center`, `/en-na/eu/daventry-uk`) returned HTTP 403 to automated requests (a plain `curl` got 403 or 307), so their content was **not independently retrieved**; the purpose statements follow Cummins' text as shown in search results and are kept deliberately narrow. Open each URL in a browser and confirm before applying the seed to Neon.
+- Source retrieval on 2026-10-17: the Seymour source (`investor.cummins.com`, news/detail/310) was retrieved and its text confirmed. The three `cummins.com` pages used for Fridley and Daventry (`/generators/power-integration-center`, `/en-na/eu/daventry-uk`) returned HTTP 403 to automated requests (a plain `curl` got 403 or 307), so their content was **not independently retrieved**; the purpose statements follow Cummins' text as shown in search results and are kept deliberately narrow. The project owner independently checked these Cummins sources in a browser on 2026-10-17 and confirmed that they support the documented business purposes.
 - Cummins's 2022 press release and Daventry milestone release were also 403 and were not used as `source_url`.
 
 ## Schema behavior observed by integration tests

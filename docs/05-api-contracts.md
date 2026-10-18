@@ -1,7 +1,7 @@
 # GridProof — API Contracts
 
 **Document:** `docs/05-api-contracts.md`  
-**Version:** 1.0 · 2026-10-17  
+**Version:** 1.1 · 2026-10-17 (1.1: API-03 adds `description`; cache and error headers specified)  
 **Status:** API-first contract for implementation, not a claim that endpoints exist  
 **Depends on:** [PRD](./01-product-requirements.md), [Flows](./02-user-flows-and-acceptance-criteria.md), [Architecture](./03-system-architecture.md), [Database](./04-database-design.md)
 
@@ -99,8 +99,8 @@ The example's empty snapshots are **abbreviation placeholders**, not valid persi
 
 ### API-03 `GET /facilities`
 - **Auth:** public. **Params/body:** none.
-- **200:** `{ "catalog_version": 1, "facilities": [{ "id":"fridley", "name":"Power Integration Center", "city":"Fridley", "region":"MN", "country":"US", "latitude": 45.0, "longitude": -93.0, "facility_type":"integration_testing", "is_interactive":true, "source_url":"https://...", "source_note":"Public facility context only; map coordinates verified in seed" }] }`.
-- **Rules:** example coordinates/URL above are **placeholders**, not seed values. Must populate with verified public locations, attribute sources, and mark Seymour/Daventry `is_interactive:false`. No operational metrics or assumed physical layouts. **Errors:** `503 CATALOG_UNAVAILABLE`, `500 INTERNAL_ERROR`.
+- **200:** `{ "catalog_version": 1, "facilities": [{ "id":"fridley", "name":"Power Integration Center", "city":"Fridley", "region":"MN", "country":"US", "latitude": 45.0, "longitude": -93.0, "facility_type":"integration_testing", "is_interactive":true, "description":"Public context text.", "source_url":"https://...", "source_note":"Public facility context only; map marker is an approximate city location" }] }`. `description` (added in 1.1, additive) is the verified public context shown on facility cards.
+- **Rules:** example coordinates/URL above are **placeholders**, not seed values. Must populate with verified public locations, attribute sources, and mark Seymour/Daventry `is_interactive:false`. No operational metrics or assumed physical layouts; no workspace or synthetic-lab data. Coordinates are approximate city locations and `source_note` says so. **Caching:** `200` carries `Cache-Control: public, max-age=300`; every error response carries `Cache-Control: no-store` and an `X-Request-ID` equal to `error.request_id`. **Errors:** `503 CATALOG_UNAVAILABLE` (database failure or an empty catalog), `500 INTERNAL_ERROR`.
 
 ### API-04 `GET /labs/fridley/assets`
 - **Auth:** public. **Params/body:** none.

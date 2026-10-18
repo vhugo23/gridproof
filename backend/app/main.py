@@ -6,12 +6,15 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.routes.facilities import router as facilities_router
 
 app = FastAPI(
     title="GridProof API",
     description="Virtual Power Integration & Commissioning API",
     version="0.1.0",
 )
+
+app.include_router(facilities_router)
 
 
 @app.get("/api/v1/health")
