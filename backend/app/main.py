@@ -25,7 +25,7 @@ def health_check():
 @app.get("/api/v1/health/database")
 def database_health(
     db: Annotated[Session, Depends(get_db)],
-    ):
+):
     try:
         result = db.execute(text("SELECT 1")).scalar_one()
 

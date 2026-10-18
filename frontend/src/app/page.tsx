@@ -1,4 +1,3 @@
-
 import ApiStatus from "@/components/api-status";
 
 export default function Home() {
@@ -15,8 +14,8 @@ export default function Home() {
           </h1>
 
           <p className="mt-3 text-zinc-400">
-            Virtual commissioning and failure simulation for
-            integrated power systems.
+            Virtual commissioning and failure simulation for integrated power
+            systems.
           </p>
         </div>
 

@@ -1,4 +1,3 @@
-
 import uuid
 from datetime import datetime
 
@@ -23,6 +22,7 @@ from app.db.base import Base
 # ============================================================
 # 1. Demo Workspaces
 # ============================================================
+
 
 class DemoWorkspace(Base):
     __tablename__ = "demo_workspaces"
@@ -65,6 +65,7 @@ class DemoWorkspace(Base):
 # ============================================================
 # 2. Facility Catalog
 # ============================================================
+
 
 class FacilityCatalog(Base):
     __tablename__ = "facility_catalog"
@@ -156,6 +157,7 @@ class FacilityCatalog(Base):
 # 3. Configurations
 # ============================================================
 
+
 class Configuration(Base):
     __tablename__ = "configurations"
 
@@ -226,6 +228,7 @@ class Configuration(Base):
 # ============================================================
 # 4. Configuration Versions
 # ============================================================
+
 
 class ConfigurationVersion(Base):
     __tablename__ = "configuration_versions"
