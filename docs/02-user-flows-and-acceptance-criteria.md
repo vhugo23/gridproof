@@ -1,7 +1,7 @@
 # GridProof — User Flows and Acceptance Criteria
 
 **Document:** `docs/02-user-flows-and-acceptance-criteria.md`  
-**Version:** 1.1  
+**Version:** 1.2 (clarifies PDF priority and facility count)  
 **Date:** October 17, 2026  
 **Status:** Approved user-flow decisions; ready for system architecture  
 **Source of truth:** [`01-product-requirements.md`](./01-product-requirements.md), version 1.1  
@@ -22,7 +22,7 @@ This document specifies **what users see, do, and receive**, before determining 
 | AI | **Optional Gemini test drafting** | Human review, deterministic validation, explicit confirmation; manual tests always work |
 | Computation | **Deterministic discrete-event simulation** | Recorded events and assertions, not scripted animation or AI-generated outcomes |
 | Persistence | **Server-side** | Save configuration versions, scenarios and immutable simulation runs on the server; reload across refreshes |
-| Evidence export | **PDF required** | Download a report generated from a persisted run snapshot (P1 release requirement) |
+| Evidence export | **PDF required** | Download a report generated from a persisted run snapshot (implementation priority P1; required for the finished showcase) |
 | Showcase | **Generator G1 startup-delay regression** | Compare verified baseline and increased startup delay; assert G1 readiness deadline independently of critical-load continuity |
 
 ### Priority definitions
@@ -63,7 +63,7 @@ Routes are **navigation concepts**, not mandated implementation URLs other than 
 **Goal:** Demonstrate a configuration change causing an observable, explainable acceptance-test outcome.  
 **Precondition:** Public demo is loaded, without private credentials or Gemini dependency.
 
-1. User opens GridProof and sees a **geographic facility map**, independent-product disclosure, and at least three verified location markers.
+1. User opens GridProof and sees a **geographic facility map**, independent-product disclosure, and the three verified location markers.
 2. User selects **Fridley, MN**. A facility card distinguishes the real Power Integration Center from the **fictional virtual lab**.
 3. User clicks **Enter Virtual Lab**. A virtual facility opens with a 2.5D equipment view and a seeded, clearly labeled synthetic system.
 4. User clicks **Generator G1**. Its highlighted marker and inspector show a consistent ID, 250 kW nameplate capacity, simulated state, and editable startup delay.

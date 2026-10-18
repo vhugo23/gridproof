@@ -1,7 +1,7 @@
 # GridProof — Implementation Roadmap
 
 **File:** `docs/10-implementation-roadmap.md`  
-**Version:** 1.0 · October 17, 2026  
+**Version:** 1.1 · October 17, 2026 (1.1: session initialization split into schema, atomic service and endpoint; F-11 made a prerequisite of database-backed work; PDF priority clarified; health-contract task added)  
 **Status:** Implementation planning — executable task backlog  
 **Product:** Independent, Cummins-inspired Virtual Power Integration & Commissioning Workbench
 
@@ -25,7 +25,7 @@ When a task requires a contract change, update the relevant specification and au
 - **Identity:** independent GridProof branding, explicit non-affiliation with Cummins, synthetic operational data.
 - **AI:** optional, user-triggered Gemini-assisted **test drafting**, never necessary for simulation, results, reports, or demonstration; validated structured drafts and manual fallback.
 - **Persistence:** Neon PostgreSQL on the server, anonymous seven-day isolated demo workspaces, immutable configuration/scenario snapshots and saved simulation evidence.
-- **Report:** downloadable PDF generated from a previously completed saved run (no re-execution).
+- **Report:** downloadable PDF generated from a previously completed saved run (no re-execution). Implementation priority is P1, but the PDF is required for the finished showcase.
 - **Flagship scenario:** G1 startup readiness at 5 s (pass) versus 15 s (fail), using a 10 s requirement; critical-load continuity evaluated **independently**.
 - **Deployment:** Next.js on Vercel, FastAPI on Render, PostgreSQL on Neon; no AWS deployment in this milestone.
 
@@ -59,24 +59,29 @@ Current status reflects the latest user-reported local executions and GitHub pro
 | F-08 | GitHub Actions CI | P0 | **Done** | Both CI jobs green per latest user confirmation | 0 h |
 | F-09 | Root README and local instructions | P0 | **Done** | Updated README confirmed in GitHub; current setup documented | 0 h |
 | F-10 | Cross-platform reproducible npm lockfile / restore `npm ci` in CI | P1 | **Planned** | Ubuntu and Windows `npm ci` succeed from same committed lockfile; CI uses `npm ci` | 2–4 h |
-| F-11 | Real database integration test harness | P0 | **Ready** | Tests run against isolated PostgreSQL with migrations; never mutate production Neon | 3–5 h |
+| F-11 | Real database integration test harness | P0 | **Ready** | Tests run against isolated PostgreSQL with migrations; never mutate production Neon. **Prerequisite for every database-backed feature (A-01, A-03 onward).** | 3–5 h |
 
 **Database currently present:** `alembic_version`, `demo_workspaces`, `facility_catalog`, `configurations`, `configuration_versions`. Tables are **not** proof that workspace/session endpoints or version-save services exist yet. The only confirmed backend routes are health checks.
+
+**Outstanding issue (health contract):** `GET /api/v1/health` currently returns `{status, service}`. The approved contract (doc 05 API-01) also requires `version` and `model_version`. The contract is unchanged; the implementation update is scheduled as **C-11**.
 
 ## 3. Delivery map and critical path
 
 ```mermaid
 flowchart TD
-    F[Existing foundation F-01 to F-09] --> A1[A-01 Catalog seed]
-    F --> A2[A-02 Workspace cookie + session]
-    A1 --> A3[A-03 Default configuration]
+    F[Existing foundation F-01 to F-09] --> F11[F-11 Isolated PostgreSQL test harness]
+    F --> A2[A-02 SystemConfigV1 schema + validation]
+    F11 --> A1[A-01 Catalog seed]
+    F11 --> A3
+    A1 --> A3[A-03 Atomic workspace initialization service]
     A2 --> A3
-    A3 --> A4[A-04 GET current configuration]
-    A4 --> A5[A-05 Transactional version saving]
-    A5 --> A6[A-06 UI configuration editor]
-    A6 --> A7[A-07 End-to-end persistence tests]
-    A7 --> B[B: Equipment and 2.5D lab]
-    A7 --> C[C: Scenario schema + simulator + run persistence]
+    A3 --> A4[A-04 GET /session]
+    A4 --> A5[A-05 GET current configuration]
+    A5 --> A6[A-06 Transactional version saving]
+    A6 --> A7[A-07 UI configuration editor]
+    A7 --> A8[A-08 End-to-end persistence tests]
+    A8 --> B[B: Equipment and 2.5D lab]
+    A8 --> C[C: Scenario schema + simulator + run persistence]
     B --> D[D: Replay / visual state binding]
     C --> D
     D --> E[E: Comparison and PDF evidence]
@@ -87,7 +92,9 @@ flowchart TD
     AI -. optional .-> R
 ```
 
-**First vertical slice / immediate next work:** A-01 → A-02 → A-03 → A-04 → A-05 → A-06 → A-07. Resist starting a second major screen until this entire path works.
+**First vertical slice / immediate next work:** F-11 → A-01 → A-02 → A-03 → A-04 → A-05 → A-06 → A-07 → A-08. Resist starting a second major screen until this entire path works.
+
+**Sprint 1 (agreed scope):** F-11 (isolated PostgreSQL integration testing) and A-01 (facility catalog seeding). No public endpoint is exposed in Sprint 1.
 
 ## 4. Ordered task backlog
 
@@ -95,15 +102,18 @@ flowchart TD
 
 **Deliverable:** a visitor loads synthetic Fridley config v1, changes G1 `startup_delay_s` 5 → 15, saves v2, reloads, and retrieves both immutable versions. Implement backend-first substeps but finish the React interaction before exiting the phase.
 
+**Session rule:** `GET /api/v1/session` is exposed only when its complete contract (doc 05 API-02) is implemented: one atomic transaction creates the workspace, the default Fridley configuration and configuration version 1. If any step fails, the whole transaction rolls back. There is no interim workspace-only endpoint.
+
 | ID | Task | Depends on | Priority | Status | Estimate | Completion criterion |
 |---|---|---|---|---|---|---|
-| **A-01** | Seed verified public facility catalog (`fridley`, `seymour`, `daventry`), with source attribution | F-05, F-06 | P0 | **Ready** | 2–3 h | Idempotent seed inserts exactly three verified facilities; Fridley interactive only; no invented coordinates or live operations |
-| **A-02** | Implement `GET /api/v1/session` and secure anonymous workspace cookie | F-05, F-06 | P0 | **Ready** | 4–6 h | Cryptographic token hash in DB; HttpOnly/Secure/SameSite settings; fixed 7-day expiry; cookie reuse; missing/expired/foreign session tests |
-| **A-03** | Pydantic `SystemConfigV1` + initial workspace-owned Fridley configuration v1 | A-01, A-02 | P0 | **Blocked** | 4–6 h | Each new workspace receives exactly one config with canonical equipment IDs and G1=5s; schema rejects unknown fields, bad SOC/ranges |
-| **A-04** | Implement `GET /api/v1/configurations/current` | A-03 | P0 | **Blocked** | 2–3 h | Returns current workspace version only, typed response, proper 401/404/503 handling |
-| **A-05** | Implement `POST /api/v1/configurations/{id}/versions` transactionally | A-04 | P0 | **Blocked** | 5–7 h | Row lock + `expected_version`; 201 v2; history unchanged; 409 on conflict; cross-workspace 404; invalid 422 |
-| **A-06** | Build minimal frontend configuration editor + save/reload/error states | A-04, A-05 | P0 | **Blocked** | 4–6 h | Adjust G1 delay, save, refresh, see persisted 15s; clear loading, validation, conflict, outage states |
-| **A-07** | End-to-end configuration and security tests | A-01…A-06, F-11 | P0 | **Blocked** | 4–6 h | Tests cover 5→15, concurrent saves, immutable v1, expired cookie, isolation across two workspaces and failure recovery |
+| **A-01** | Seed verified public facility catalog (`fridley`, `seymour`, `daventry`), with source attribution | F-05, F-06, F-11 | P0 | **Blocked** (by F-11) | 2–3 h | Idempotent seed inserts exactly three verified facilities; Fridley interactive only; no invented coordinates or live operations; seed idempotency tested on isolated PostgreSQL |
+| **A-02** | Define and validate Pydantic `SystemConfigV1` and the canonical default Fridley configuration (no database) | docs 04, 05 | P0 | **Ready** | 3–4 h | Canonical equipment IDs, G1=5 s default; schema rejects unknown fields, non-finite numbers, bad SOC/ranges; boundary tests |
+| **A-03** | Database service: atomically initialize a workspace (workspace row, default Fridley configuration, configuration version 1) | A-01, A-02, F-11 | P0 | **Blocked** | 4–6 h | Token hash stored; fixed 7-day expiry; exactly one config and one v1 per workspace; injected failure at each step rolls back all rows; tested on isolated PostgreSQL |
+| **A-04** | Implement `GET /api/v1/session` and secure anonymous workspace cookie on top of A-03 | A-03 | P0 | **Blocked** | 3–5 h | Full API-02 contract met; HttpOnly/Secure/SameSite settings; cookie reuse returns `is_new:false`; missing/expired/foreign session tests; initialization failure returns an error and leaves no rows |
+| **A-05** | Implement `GET /api/v1/configurations/current` | A-04 | P0 | **Blocked** | 2–3 h | Returns current workspace version only, typed response, proper 401/404/503 handling |
+| **A-06** | Implement `POST /api/v1/configurations/{id}/versions` transactionally | A-05, F-11 | P0 | **Blocked** | 5–7 h | Row lock + `expected_version`; 201 v2; history unchanged; 409 on conflict; cross-workspace 404; invalid 422 |
+| **A-07** | Build minimal frontend configuration editor + save/reload/error states | A-05, A-06 | P0 | **Blocked** | 4–6 h | Adjust G1 delay, save, refresh, see persisted 15s; clear loading, validation, conflict, outage states |
+| **A-08** | End-to-end configuration and security tests | A-01…A-07, F-11 | P0 | **Blocked** | 4–6 h | Tests cover 5→15, concurrent saves, immutable v1, expired cookie, isolation across two workspaces and failure recovery |
 
 **Exit gate A:** Show a real browser-to-Neon transaction and confirm reload persistence; demonstrate `409` conflicts and that v1 is never overwritten. No simulation required yet.
 
@@ -111,11 +121,11 @@ flowchart TD
 
 | ID | Task | Depends on | Priority | Status | Estimate | Completion criterion |
 |---|---|---|---|---|---|---|
-| **B-01** | Define stable asset catalog, connections, physical labels and renderer contract | A-03 | P0 | **Planned** | 3–4 h | `g1`, `g2`, battery, utility, switchgear, load correspond exactly to configuration IDs; documented fixed topology |
+| **B-01** | Define stable asset catalog, connections, physical labels and renderer contract | A-02 | P0 | **Planned** | 3–4 h | `g1`, `g2`, battery, utility, switchgear, load correspond exactly to configuration IDs; documented fixed topology |
 | **B-02** | Source/license representative equipment images and limited GLB/glTF models | B-01 | P1 | **Planned** | 3–6 h | Provenance/license recorded; no fake Cummins specifications; fallback image per asset |
-| **B-03** | Implement `/api/v1/labs/fridley/assets` and 2.5D clickable lab | B-01, A-06 | P0 | **Planned** | 6–9 h | Selecting asset highlights it and opens correct info; synthetic notice visible; no misleading live data |
+| **B-03** | Implement `/api/v1/labs/fridley/assets` and 2.5D clickable lab | B-01, A-07 | P0 | **Planned** | 6–9 h | Selecting asset highlights it and opens correct info; synthetic notice visible; no misleading live data |
 | **B-04** | Focused React Three Fiber asset inspector and static fallback | B-02, B-03 | P1 | **Planned** | 5–8 h | Supported GLB rotates/zooms; loading/error fallback works on mobile and unsupported devices |
-| **B-05** | Link asset inspector to saved settings and error states | B-03, A-06 | P0 | **Planned** | 2–4 h | G1 inspector reflects current saved version; no independent invented client state |
+| **B-05** | Link asset inspector to saved settings and error states | B-03, A-07 | P0 | **Planned** | 2–4 h | G1 inspector reflects current saved version; no independent invented client state |
 
 **Exit gate B:** User clicks a visual generator, inspects it, edits its actual stored input, and sees the same data in the editor and inspector.
 
@@ -123,16 +133,18 @@ flowchart TD
 
 | ID | Task | Depends on | Priority | Status | Estimate | Completion criterion |
 |---|---|---|---|---|---|---|
-| **C-01** | Define Pydantic `ScenarioV1` event/assertion schemas and deterministic ordering | A-03, B-01 | P0 | **Planned** | 4–6 h | Supported event/asset types and bounds enforced; contradictory and unsupported inputs rejected |
+| **C-01** | Define Pydantic `ScenarioV1` event/assertion schemas and deterministic ordering | A-02, B-01 | P0 | **Planned** | 4–6 h | Supported event/asset types and bounds enforced; contradictory and unsupported inputs rejected |
 | **C-02** | Add scenario/revision SQLAlchemy models + Alembic Migration 003 | C-01, F-06 | P0 | **Planned** | 3–5 h | Tables, immutable revisions, ownership constraints; migration and `alembic check` pass |
 | **C-03** | Seed six approved global read-only scenario templates | C-02 | P0 | **Planned** | 3–4 h | Six deterministic templates; repeated seeding doesn't duplicate; edits fork instead of mutating seed |
-| **C-04** | Implement scenario list, validation, and save/fork APIs | C-01…C-03, A-02 | P0 | **Planned** | 4–7 h | `GET /scenarios`, `POST /scenarios/validate`, `POST /scenarios` match contract and isolate drafts |
+| **C-04** | Implement scenario list, validation, and save/fork APIs | C-01…C-03, A-04 | P0 | **Planned** | 4–7 h | `GET /scenarios`, `POST /scenarios/validate`, `POST /scenarios` match contract and isolate drafts |
 | **C-05** | Implement deterministic simulator: sources, breaker connectivity, loads, battery SOC and event scheduler | C-01, B-01 | P0 | **Planned** | 12–18 h | Pure repeatable engine; explicit startup/transfer timing; rated power and SOC limits obeyed; no Gemini dependency |
 | **C-06** | Implement assertions and bounded replay evidence | C-05 | P0 | **Planned** | 5–8 h | G1-ready requirement separate from load continuity; ordered events, frames and metrics consistent |
-| **C-07** | Add run/idempotency models + Alembic Migration 004 | C-02, A-02 | P0 | **Planned** | 4–6 h | Pending/running/completed/error state constraints, saved snapshots, idempotency uniqueness |
+| **C-07** | Add run/idempotency models + Alembic Migration 004 | C-02, A-04 | P0 | **Planned** | 4–6 h | Pending/running/completed/error state constraints, saved snapshots, idempotency uniqueness |
 | **C-08** | Implement `POST /runs`, `GET /runs/{id}`, `GET /runs` | C-06, C-07 | P0 | **Planned** | 6–10 h | Verified ownership; same key+payload same run; conflicting key 409; terminal evidence immutable; errors never show pass |
 | **C-09** | Build scenario picker, run control, basic results screen | C-04, C-08 | P0 | **Planned** | 5–8 h | Browser selects scenario and gets real saved result with loading/failure states |
 | **C-10** | Golden fixtures, integration and negative tests | C-05…C-09, F-11 | P0 | **Planned** | 5–8 h | 5s pass / 15s fail from same scenario; deterministic reruns; invalid inputs, unserved load and battery limits tested |
+
+| **C-11** | Update `GET /health` to the approved API-01 contract (`version`, `model_version`) and add a contract test | C-05, F-04 | P1 | **Planned** | 1–2 h | Response matches doc 05 API-01 exactly; `model_version` is sourced from the simulator, not a literal; no infrastructure details exposed |
 
 **Exit gate C:** A real 5s and 15s run are persisted in Neon, with requirement-linked test outcomes calculated by the simulator—not hardcoded in the frontend.
 
@@ -154,7 +166,7 @@ flowchart TD
 
 | ID | Task | Depends on | Priority | Status | Estimate | Completion criterion |
 |---|---|---|---|---|---|---|
-| **E-01** | Build independent GridProof navigation shell and accessibility baseline | A-06 | P1 | **Planned** | 3–5 h | Clear branded navigation, keyboard reachability, visible non-affiliation notice |
+| **E-01** | Build independent GridProof navigation shell and accessibility baseline | A-07 | P1 | **Planned** | 3–5 h | Clear branded navigation, keyboard reachability, visible non-affiliation notice |
 | **E-02** | Implement MapLibre geographic landing screen | A-01, E-01 | P0 | **Planned** | 5–7 h | Actual initial route is map; precisely three supported verified site markers |
 | **E-03** | Facility detail panel and Fridley routing | E-02, B-03 | P0 | **Planned** | 3–5 h | Fridley opens lab; Seymour/Daventry public context only; no fabricated live metrics |
 | **E-04** | Integrate lab scene, equipment inspection, tests and results into coherent app | B-05, C-09, D-04, E-03 | P0 | **Planned** | 5–8 h | Full map→lab→edit→run→results journey works without navigating dead ends |
@@ -168,7 +180,7 @@ flowchart TD
 | ID | Task | Depends on | Priority | Status | Estimate | Completion criterion |
 |---|---|---|---|---|---|---|
 | **AI-01** | Define prompt-to-`ScenarioV1` structured draft boundary | C-01, C-04 | P2 | **Planned** | 2–3 h | Output conforms to existing validator; AI cannot bypass supported event schema |
-| **AI-02** | Implement backend Gemini draft route with limits/timeouts | AI-01, A-02 | P2 | **Planned** | 3–5 h | Secret server-side; rate capped; no automatic save or execution |
+| **AI-02** | Implement backend Gemini draft route with limits/timeouts | AI-01, A-04 | P2 | **Planned** | 3–5 h | Secret server-side; rate capped; no automatic save or execution |
 | **AI-03** | Review/approve draft UI and manual fallback | AI-02, C-09 | P2 | **Planned** | 3–5 h | Explicit user confirmation; no loss of manually entered scenario when API unavailable |
 | **AI-04** | Test quota failures, invalid output, unsupported requests | AI-02, AI-03 | P2 | **Planned** | 2–4 h | 429/503/504 and malformed draft degrade gracefully; no false live-AI claim |
 
@@ -178,7 +190,7 @@ flowchart TD
 
 | ID | Task | Depends on | Priority | Status | Estimate | Completion criterion |
 |---|---|---|---|---|---|---|
-| **G-01** | Add isolated PostgreSQL integration tests to CI | F-11, A-07, C-10 | P0 | **Planned** | 4–6 h | Automated migrated test DB verifies ownership/version/run persistence without production credentials |
+| **G-01** | Add isolated PostgreSQL integration tests to CI | F-11, A-08, C-10 | P0 | **Planned** | 4–6 h | Automated migrated test DB verifies ownership/version/run persistence without production credentials |
 | **G-02** | Restore strict `npm ci` by fixing cross-platform lockfile | F-10 | P1 | **Planned** | 2–4 h | CI on Linux installs exact locked deps with `npm ci`; no `npm install` workaround |
 | **G-03** | Deploy frontend Vercel and backend Render; configure Neon safely | E-04, G-01 | P0 | **Planned** | 4–7 h | Live HTTP health checks and all primary routes function; secrets only in server env |
 | **G-04** | Production checks: cookies, proxy, migrations, cross-workspace access, failure states | G-03 | P0 | **Planned** | 4–7 h | No secret leaks or cross-workspace access; expiry/rate-limit and outages behave as documented |
@@ -192,9 +204,9 @@ flowchart TD
 | Milestone | Scope | Demo at milestone exit | Status |
 |---|---|---|---|
 | M0 — Foundation | F-01…F-09 | Working frontend ↔ backend ↔ Neon and green CI | **Done** |
-| M1 — First vertical slice | A-01…A-07 | Change G1 5s→15s, save/retrieve both versions | **Next** |
+| M1 — First vertical slice | F-11, A-01…A-08 | Change G1 5s→15s, save/retrieve both versions | **Next** |
 | M2 — Physical lab | B-01…B-05 | Select modeled physical equipment and inspect stored values | Planned |
-| M3 — Real simulator | C-01…C-10 | Run G1 readiness regression with saved evidence | Planned |
+| M3 — Real simulator | C-01…C-11 | Run G1 readiness regression with saved evidence | Planned |
 | M4 — Explainable evidence | D-01…D-07 | Replay, compare, export saved run PDF | Planned |
 | M5 — Convention UI | E-01…E-06 | Map-first full user journey | Planned |
 | M6 — Release | G-01…G-06 | Public, tested, documented project | Planned |
@@ -231,8 +243,8 @@ For each coding-assistant task, request: **changed files, tests executed/results
 
 ## 8. Exactly where to begin
 
-**Next task: `A-01`** — implement a **repeatable, sourced seed** of three public facility records (Fridley, Seymour, Daventry). Check existing rows before inserting; use only verified coordinates, names and source URLs. Build seed-idempotency tests. Follow with **`A-02`** session creation before touching the configuration UI.
+**Next tasks (Sprint 1): `F-11`, then `A-01`.** F-11 provides isolated PostgreSQL integration testing (never production Neon). A-01 is a **repeatable, sourced seed** of three public facility records (Fridley, Seymour, Daventry): check existing rows before inserting, use only verified coordinates, names and source URLs, and build seed-idempotency tests. `A-02` (`SystemConfigV1`) has no database dependency and may proceed independently. `GET /session` (A-04) ships only after the atomic initialization service (A-03) exists.
 
-**Current state:** M0 complete, M1 not yet started; configuration schema migrated, but no authenticated workspace lifecycle, save API, or simulation is implemented.
+**Current state:** M0 complete, M1 not yet started; the configuration tables are migrated, but no workspace lifecycle, `SystemConfigV1`, save API, or simulation is implemented. Sprint 1 has not started.
 
 **End state sought:** a Cummins-aware, visually physical, map-first workbench with a deterministic and auditable end-to-end simulated power-system integration test. Not a generic monitoring dashboard and not an AI-only demo.

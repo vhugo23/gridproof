@@ -1,7 +1,7 @@
 # GridProof — Product Requirements Document
 
 **Document:** `docs/01-product-requirements.md`  
-**Version:** 1.1 (product decisions locked)  
+**Version:** 1.2 (product decisions locked; 1.2 aligns report format and facility count with doc 02 and the roadmap)  
 **Date:** October 17, 2026  
 **Status:** MVP product decisions approved; engineering specification  
 **Product:** GridProof — Virtual Power Integration & Commissioning Workbench
@@ -81,7 +81,7 @@ Requirement IDs are stable references for engineering implementation and accepta
 
 ### Facility navigation and presentation
 
-- **FR-01:** The application shall open on a geographic map (the default landing route) containing **at least three verified Cummins facilities**: Fridley (Minnesota), Seymour (Indiana), and Daventry (United Kingdom), with locations checked against published sources before release.
+- **FR-01:** The application shall open on a geographic map (the default landing route) containing **exactly three verified Cummins facilities in V1**: Fridley (Minnesota), Seymour (Indiana), and Daventry (United Kingdom), with locations checked against published sources before release.
 - **FR-02:** Selecting the Fridley marker shall reveal a facility detail panel with a clearly labeled **Enter Virtual Lab** action that opens the fully interactive **virtual PIC** workspace.
 - **FR-03:** Selecting Seymour or Daventry shall display verified facility context and illustrative equipment information, **not** a simulated live facility or a separate fully functional domain.
 - **FR-04:** The application shall visibly identify all map, asset and simulation data as public-context, representative, or synthetic as appropriate.
@@ -107,7 +107,7 @@ Requirement IDs are stable references for engineering implementation and accepta
 - **FR-18:** The physical equipment view, single-line diagram, charts, and playback timeline shall derive from the **same recorded simulation state** at each replay time.
 - **FR-19:** Users shall be able to replay and pause a completed run and inspect the inputs and evidence associated with a failed assertion.
 - **FR-20:** The application shall compare at least two runs or configuration snapshots and identify changes in key results and pass/fail statuses.
-- **FR-21:** The system shall export a downloadable report (PDF or structured HTML) containing project and configuration identifiers, assumptions, scenario and requirement definitions, event trace, measured outcomes, and limitations.
+- **FR-21:** The system shall export a downloadable **PDF** report generated from a saved run snapshot, containing project and configuration identifiers, assumptions, scenario and requirement definitions, event trace, measured outcomes, and limitations.
 - **FR-22:** Users shall be able to create/edit supported test scenarios manually with **no AI access**.
 - **FR-23:** On explicit user request only, the optional Gemini integration shall attempt to produce a **draft** scenario matching the supported schema. The application shall independently validate the schema, allowed event types, asset references and assertion values, show the resulting draft to the user for editing/confirmation, and never execute automatically or control electrical assets.
 - **FR-24:** If AI access is unavailable or usage limits are reached, the core configuration, execution, result review, and report workflow shall remain usable; saved approved scenario templates may be reused without another API request.
@@ -201,7 +201,7 @@ The MVP is accepted only when each criterion is demonstrably satisfied. Scenario
 ### Delivery priorities
 
 - **P0 — Must ship:** deterministic simulator, six scenarios, invariant tests, configuration, result trace and assertions, functional Fridley workspace, map-to-lab entry, manual authoring.
-- **P1 — Strong MVP:** polished 2.5D site and 3D equipment inspector with image fallback, synchronized diagram and replay, two-run comparison, report export, contextual site cards, independent visual identity.
+- **P1 — Strong MVP:** polished 2.5D site and 3D equipment inspector with image fallback, synchronized diagram and replay, two-run comparison, PDF report export (implementation priority P1, but required for the finished showcase), contextual site cards, independent visual identity.
 - **P2 — Optional:** Gemini **draft-test** authoring and nonessential animation/3D refinement; manual draft authoring remains P0.
 
 If the schedule becomes constrained, P0 correctness takes precedence over asset polish and AI.

@@ -243,6 +243,12 @@ The current CI installation uses `npm install` while cross-platform lockfile con
 - [System Architecture](docs/03-system-architecture.md)
 - [Database Design](docs/04-database-design.md)
 - [API Contracts](docs/05-api-contracts.md)
+- [Development Log](docs/06-development-log.md)
+- [Testing Strategy](docs/07-testing-strategy.md)
+- [Decisions](docs/08-decisions.md)
+- [Known Limitations](docs/09-known-limitations.md)
+- [Implementation Roadmap](docs/10-implementation-roadmap.md)
+- [Project Status](docs/PROJECT-STATUS.md)
 
 ## Security and Limitations
 

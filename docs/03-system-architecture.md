@@ -1,9 +1,9 @@
 # GridProof — System Architecture & Technology Decisions
 
 **Document:** `docs/03-system-architecture.md`  
-**Version:** 1.0 — implementation baseline  
+**Version:** 1.1 — implementation baseline (1.1: repository layout, tooling, identifiers and retention reconciled)  
 **Date:** October 17, 2026  
-**Status:** Proposed technical design based on approved product decisions  
+**Status:** Technical design baseline; reconciled with the repository layout on 2026-10-17 (sections marked "target" are not implemented)  
 **Sources of truth:** [01 Product Requirements](./01-product-requirements.md) v1.1 and [02 User Flows & Acceptance Criteria](./02-user-flows-and-acceptance-criteria.md) v1.1  
 **Audience:** Software engineer implementing the SHPE MVP
 
@@ -108,21 +108,23 @@ flowchart TD
 
 ```text
 gridproof/
-├── apps/web/                    # Next.js frontend
-│   ├── app/page.tsx             # Facility map
-│   ├── app/lab/fridley/page.tsx # Lab shell with tabs/panels
-│   ├── components/{map,lab,assets,scenario,results,replay}/
-│   ├── lib/api/                 # Typed client / generated OpenAPI types
-│   └── public/assets/          # Attribution manifest + bundled 2.5D/GLB/images
-├── apps/api/
+├── frontend/                    # Next.js frontend (src/ layout)
+│   ├── src/app/page.tsx         # Facility map (target; currently a status page)
+│   ├── src/app/lab/fridley/page.tsx # Lab shell with tabs/panels
+│   ├── src/components/{map,lab,assets,scenario,results,replay}/
+│   ├── src/lib/api/             # Typed client / generated OpenAPI types
+│   └── public/assets/           # Attribution manifest + bundled 2.5D/GLB/images
+├── backend/
 │   ├── app/main.py              # FastAPI composition / middleware
+│   ├── app/core/                # Settings (implemented)
+│   ├── app/db/                  # Base, models, session (implemented)
 │   ├── app/routes/              # Facilities, configs, scenarios, runs, reports, AI
 │   ├── app/domain/              # Pydantic + explicit domain enums
 │   ├── app/simulation/          # Pure event engine, state models, assert evaluators
 │   ├── app/services/            # Versioning, workspace auth, exports
-│   ├── app/persistence/         # SQLAlchemy models/repositories, Alembic migrations
+│   ├── migrations/              # Alembic migrations
 │   └── tests/                   # Unit, API, determinism, security fixtures
-├── docs/                        # PRD, flows, architecture, ADRs
+├── docs/                        # PRD, flows, architecture, DB, API, log, testing, decisions, limitations, roadmap, status
 ├── .github/workflows/ci.yml
 └── README.md
 ```
@@ -139,6 +141,7 @@ gridproof/
 | `configuration_versions` | `id`, `configuration_id`, `version_number`, `snapshot_json`, `schema_version`, `created_at` | Append-only once created |
 | `scenarios` | `id`, `workspace_id`, `name`, `latest_revision`, `template_origin` | Six global templates plus workspace drafts |
 | `scenario_revisions` | `id`, `scenario_id`, `revision`, `definition_json`, `schema_version`, `created_at` | Validated, immutable revisions |
+| `run_idempotency` | `id`, `workspace_id`, `run_id`, key and request fingerprint (see doc 04) | One idempotency record per run; same key + same payload returns the same run, different payload returns 409 |
 | `simulation_runs` | `id`, `workspace_id`, `config_version_id`, `scenario_revision_id`, `status`, `model_version`, `config_snapshot_json`, `scenario_snapshot_json`, `events_json`, `frames_json`, `metrics_json`, `assertions_json`, `error_code`, `created_at`, `completed_at` | Append-only inputs/output for completed runs; status can transition *only* while pending/running |
 
 **Recommendation:** JSONB for deterministic run snapshots and event frames is reasonable at the MVP's bounded size. Add indexes on `(workspace_id, created_at DESC)` and parent version FKs. Don't introduce a timeseries database or store one database row per simulated timestep for a handful of short scenarios.
@@ -149,7 +152,7 @@ gridproof/
 - A run references exact version IDs and stores copies of both input snapshots, simulation/model version, the ordered event trace, frames, metrics, and assertion evidence. `Completed` runs cannot be edited or deleted by normal APIs.
 - Create/run/result/report operations are scoped by **workspace_id** derived server-side from the session; callers cannot specify arbitrary workspace ownership.
 - Use UUIDs for public record identifiers; UUID obscurity is **not** authorization.
-- Proposed MVP session/data retention: **7 days** of inactivity or age (choose fixed 7-day expiration for simpler enforcement), with a documented daily cleanup job or bounded manual cleanup during the MVP. No promise of permanent storage or user accounts.
+- Proposed MVP session/data retention: a **fixed 7-day expiration from workspace creation** (no inactivity extension), with a documented daily cleanup job or bounded manual cleanup during the MVP. No promise of permanent storage or user accounts.
 - Never store Gemini prompts containing credentials or private client operational data; the app uses only synthetic test descriptions.
 
 ### Workspace session design
@@ -178,16 +181,16 @@ Supported values include generator startup delay, start failure, equipment/break
 4. Process each event and compute resulting power-source connectivity and allowable dispatch; a running generator behind an open breaker contributes **zero** delivered power.
 5. Enforce inverter kW and usable battery energy limits, bounded SOC, and demand conservation: **delivered + unserved = required load**, within documented numeric tolerance.
 6. Record state snapshots at each meaningful event and at bounded fixed sampling intervals if necessary for chart/replay. Do not fabricate curves between recorded states without labeling interpolation.
-7. Evaluate requirements using observed trace/metrics (e.g. `G1_READY_WITHIN_10S`, `CRITICAL_LOAD_RESTORATION`, `MIN_BESS_SOC`). A start-readiness failure is **not automatically** a critical-load failure.
+7. Evaluate requirements using observed trace/metrics (e.g. `G1_READY_WITHIN_10S`, `CRITICAL_LOAD_CONTINUITY`, `MIN_BESS_SOC`). A start-readiness failure is **not automatically** a critical-load failure.
 8. Return ordered events, recorded frames, calculated metrics, assertion evidence, and engine version; no database or network access from core simulation.
 
-**Baseline showcase:** same seed scenario and acceptance threshold; `G1.startup_delay_seconds = 5` produces readiness **pass**, while a new saved version with `15` produces readiness **fail** against a **10-second** deadline. Both runs must use the actual simulator and be independently persisted. Critical-load continuity is evaluated separately and may have a different outcome.
+**Baseline showcase:** same seed scenario and acceptance threshold; `G1.startup_delay_s = 5` produces readiness **pass**, while a new saved version with `15` produces readiness **fail** against a **10-second** deadline. Both runs must use the actual simulator and be independently persisted. Critical-load continuity is evaluated separately and may have a different outcome.
 
 **Model exclusions:** no voltage/frequency transient waveform modeling, synchronization physics, detailed protection coordination, short-circuit studies, or real commissioning certification. Power and event outcomes must be described as **simplified modeled behavior**.
 
 ### 6.3 Execution boundaries
 
-- Limit number of assets, events, simulated horizon, and frame count at schema level. Suggested initial caps: **20 assets, 100 scenario events, 30 simulated minutes, 2,000 recorded frames**; revise based on measured benchmarks.
+- Limit number of assets, events, simulated horizon, and frame count at schema level. Scenario limits are defined in doc 04 (`ScenarioV1`: duration 1..600 s, 1..30 events, 1..20 assertions). Suggested initial caps for the remaining dimensions: **20 assets, 2,000 recorded frames**; revise based on measured benchmarks, and change doc 04 if the scenario limits change.
 - Execute small runs inside FastAPI's worker/threadpool so the async server event loop isn't blocked; use an application-level timeout and resource limits. **No queue for V1.** If timeouts are observed after benchmarking, move simulation execution to a worker as a later ADR.
 - On success, atomically persist the run snapshot and return its stable ID; on failure, persist `Error` with a safe diagnostic correlation ID and **no fabricated pass/fail assertions**.
 - `POST /runs` accepts an `Idempotency-Key` to avoid accidental duplicate runs due to retries or double-clicks, scoped to workspace/request fingerprint.
@@ -350,17 +353,17 @@ Optional: Gemini API and hosted map tiles (not critical to simulation)
 
 **Environment setup:**
 
-- **Vercel:** deploy `apps/web`; configure `/api/:path*` rewrite to Render `/api/:path*`; set only nonsecret public map configuration if needed; bundle core models/images locally.
-- **Render:** deploy `apps/api` as a Python web service, run Alembic migration as a controlled predeploy/release step; configure environment variables, instance timeout and HTTPS; use `uvicorn` with modest worker count. Health endpoint reports app readiness; do not expose DB credentials in readiness output.
+- **Vercel:** deploy `frontend/`; configure `/api/:path*` rewrite to Render `/api/:path*`; set only nonsecret public map configuration if needed; bundle core models/images locally.
+- **Render:** deploy `backend/` as a Python web service, run Alembic migration as a controlled predeploy/release step; configure environment variables, instance timeout and HTTPS; use `uvicorn` with modest worker count. Health endpoint reports app readiness; do not expose DB credentials in readiness output.
 - **Neon:** one MVP database, pooled connection endpoint if needed, SSL enabled, migration role access restricted where practical. Use SQLAlchemy connection-pool settings suitable for host resource tier.
 - **GitHub Actions:** lint/typecheck frontend, lint backend, pytest simulator/API, run integration tests with ephemeral PostgreSQL in CI, build frontend, then optional Playwright smoke against deployed preview. No secrets required for unit tests; Gemini mocked.
 - **Environments:** local `.env`, one deployable preview/staging configuration, production/demo. Seed synthetic facilities/configs/scenarios through idempotent migration or seed script.
-- **Availability caveat:** free/low-cost Render services may cold-start or sleep and managed databases may have connection limits. Test full demonstration on actual deployed tier **before** SHPE; a locally runnable Docker Compose fallback is strongly recommended. Map tiles may require internet; provide accessible facility navigation without tiles.
+- **Availability caveat:** free/low-cost Render services may cold-start or sleep and managed databases may have connection limits. Test full demonstration on actual deployed tier **before** SHPE; a locally runnable fallback is recommended (no Docker Compose file exists yet; none is committed to). Map tiles may require internet; provide accessible facility navigation without tiles.
 - **Release check:** deployed P0 workflow, run persistence after refresh, cross-session isolation, no-Gemini demonstration, PDF validity, and six scenario benchmarks.
 
 ### Local developer experience
 
-Run `docker compose up` for PostgreSQL + FastAPI where useful, and `pnpm dev` (or npm scripts) for Next.js. Seed fixtures, run `pytest`, run frontend tests, then Playwright smoke. No AWS account or external Gemini request required to develop the simulator.
+Run FastAPI from `backend/` (uvicorn) against a local or Neon-branch PostgreSQL, and `npm run dev` in `frontend/` for Next.js (npm is the package manager). Seed fixtures, run `pytest`, run frontend tests, then Playwright smoke. No AWS account or external Gemini request required to develop the simulator.
 
 ## 12. Observability, testing and release gates
 
