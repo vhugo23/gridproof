@@ -191,4 +191,4 @@ GitHub Actions (run 39133125159, commit `b363dad`): Backend Checks and Frontend 
 
 Manual check (2026-10-18): uvicorn on the seeded Docker test database behind the unmodified local `next dev` rewrite. `/session` then `/configurations/current` with the returned cookie gave `200`, `Cache-Control: no-store`, `Vary: Cookie` (plus Next's `Accept-Encoding`) and no `Set-Cookie`; without a valid cookie it gave the `401 SESSION_REQUIRED` envelope with the same headers. Not verified: Vercel to Render in a deployed environment.
 
-GitHub Actions has not run for A-05 at the time of writing.
+GitHub Actions (run 39134011492, commit `d9427bf`): Backend Checks and Frontend Checks succeeded; backend `554 passed, 1 warning`, none skipped; frontend 2 tests passed.
