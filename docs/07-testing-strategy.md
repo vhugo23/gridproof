@@ -148,4 +148,4 @@ The CI status of earlier pushes is user-reported, not observed here.
 | `pytest -q` without `TEST_DATABASE_URL` | 328 passed, 107 skipped |
 | `GRIDPROOF_REQUIRE_TEST_DB=1`, no URL | 328 passed, 107 errors (intended; measured before the schema-version tests were added) |
 
-Not yet run: the GitHub Actions run for A-02.
+GitHub Actions (run 39130740308, commit `74fe5e2`): Backend Checks and Frontend Checks succeeded; backend `435 passed, 1 warning`, none skipped; frontend 2 tests passed.

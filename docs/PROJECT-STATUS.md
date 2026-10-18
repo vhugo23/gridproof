@@ -1,12 +1,12 @@
 # GridProof — Project Status
 
-**Updated:** 2026-10-17 · **Branch:** `main` · **Last commit when written:** `7320f28`
+**Updated:** 2026-10-17 · **Branch:** `main` · **Last commit when written:** `74fe5e2`
 
 ## Current position
 
 - **M0 Foundation: Done** (F-01 to F-09). Next.js 16 frontend, FastAPI backend, Neon connection, Alembic migrations 001 and 002, test tooling and CI.
 - **M1 First vertical slice: not started.**
-- **Sprint 1 (agreed):** F-11 isolated PostgreSQL integration testing, then A-01 facility catalog seeding. The documentation foundation is committed (`99dd538`). **F-11 is Done** (commit `2041663`, CI green on both jobs). **A-01 is Done** (commit `09a49d6`, CI green on both jobs, 156 backend tests); the seed has **not** been applied to Neon. **A-01b is Done** (`GET /api/v1/facilities`, commit `7320f28`, CI green on both jobs, 179 backend tests). **A-02** (`SystemConfigV1`) is implemented and passing locally (435 backend tests) but **not committed and not yet run in CI**, so it is not marked Done. Next: review and commit A-02, then A-03.
+- **Sprint 1 (agreed):** F-11 isolated PostgreSQL integration testing, then A-01 facility catalog seeding. The documentation foundation is committed (`99dd538`). **F-11 is Done** (commit `2041663`, CI green on both jobs). **A-01 is Done** (commit `09a49d6`, CI green on both jobs, 156 backend tests); the seed has **not** been applied to Neon. **A-01b is Done** (`GET /api/v1/facilities`, commit `7320f28`, CI green on both jobs, 179 backend tests). **A-02 is Done** (`SystemConfigV1`, commit `74fe5e2`, CI green on both jobs, 435 backend tests). Next: A-03.
 
 ## Implemented (verified in source)
 
@@ -37,9 +37,9 @@ F-11 → A-01 → A-01b → A-02 → A-03 (atomic workspace initialization) → 
 
 ## Next three recommended actions
 
-1. Review A-02, authorize a commit, and confirm CI is green.
+1. Review the A-03 plan (atomic workspace initialization), then implement it.
 2. Confirm Neon's PostgreSQL major version and align the test image if needed; separately decide when to apply the facility seed to Neon.
-3. Plan and implement A-03 (atomic workspace initialization service using `default_system_config` and `ConfigurationName`).
+3. Implement A-04 (`GET /api/v1/session`) once A-03 is Done.
 
 ## Documents
 

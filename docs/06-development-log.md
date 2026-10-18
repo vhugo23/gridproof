@@ -58,7 +58,8 @@ Documentation only; no application code, migrations or CI changes.
 - No schema change, migration, dependency, CI change or Neon access. Decision D-17 recorded. Error handling is scoped to the route (no application-wide handler).
 - GitHub Actions run 39098605127: both jobs green, 179 backend tests passed. The seed was not run against Neon and nothing was deployed.
 
-## 2026-10-18 — A-02 SystemConfigV1 schema (uncommitted)
+## 2026-10-18 — A-02 SystemConfigV1 schema (`74fe5e2`)
 
 - Added `app/domain/system_config.py` (frozen strict models, default Fridley config, snapshot helpers, safe validation details, `ConfigurationName`) and schema, name and PostgreSQL storage tests. `docs/05-api-contracts.md` is now 1.2 (fixed fields, integers, load-demand distinction, name rules).
 - No endpoint, schema, migration, dependency, CI or frontend change; no Neon access. Decision D-18 recorded.
+- Review added `load_snapshot(schema_version, data)`: stored snapshots with any version other than `config-v1` raise `UnsupportedSchemaVersion`. GitHub Actions run 39130740308: both jobs green, 435 backend tests passed. Nothing was seeded on Neon or deployed.
