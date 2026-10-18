@@ -1,7 +1,7 @@
 # GridProof — API Contracts
 
 **Document:** `docs/05-api-contracts.md`  
-**Version:** 1.1 · 2026-10-17 (1.1: API-03 adds `description`; cache and error headers specified)  
+**Version:** 1.2 · 2026-10-18 (1.2: SystemConfigV1 clarifications; 1.1: API-03 adds `description`; cache and error headers specified)  
 **Status:** API-first contract for implementation, not a claim that endpoints exist  
 **Depends on:** [PRD](./01-product-requirements.md), [Flows](./02-user-flows-and-acceptance-criteria.md), [Architecture](./03-system-architecture.md), [Database](./04-database-design.md)
 
@@ -47,6 +47,8 @@ Do not return stack traces, secrets, cross-workspace existence, or raw Gemini pr
 }
 ```
 `rated_kw`, `inverter_kw`, `usable_kwh`, topology, and asset IDs are fixed in V1 (must match seeded catalog), not arbitrary user-editable numbers. Editable config fields: `g1/g2.startup_delay_s` (0..120), `enabled` boolean, battery `initial_soc_pct` (0..100, >= min SOC), `critical_kw` (1..500), supported enumerated `switchgear.mode` (`auto` only for V1). Unknown IDs and unsupported values are rejected. Server validates cross-field rules.
+
+**V1 clarifications (1.2).** `battery.min_soc_pct` must equal 20 and `utility.available` must equal `true` in V1; they are fixed, not editable (utility outages are scenario events). Every numeric field is a whole number: booleans, decimals (including `5.0`), strings and non-finite numbers are rejected. `load.critical_kw` is the **baseline** critical load; demand changes during a run come from `set_load_kw` scenario events, and the load-bank visualization shows that simulated demand, so `SystemConfigV1` has no load-bank field. Validation errors map to `details[{field, reason}]` with dotted paths such as `equipment.g1.startup_delay_s`; reasons never echo submitted values. A configuration `name` is trimmed, 1..100 characters, contains no control characters and has at least one visible character.
 
 **ScenarioV1** (saved `definition`; example):
 ```json

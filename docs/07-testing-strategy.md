@@ -46,6 +46,7 @@ docker compose -f backend/docker-compose.test.yml down -v
 | `test_db_safety.py` | The URL guard (accepted and rejected URLs) and that rejection messages never contain the password. Needs no database. |
 | `test_migrations.py` | Single head; upgrade, step-wise upgrade, downgrade, round trip, idempotent upgrade; schema compared with a hand-written specification (columns, defaults, checks, uniques, foreign keys, indexes); model/migration drift (`alembic check` equivalent). |
 | `test_schema_constraints.py` | Every named CHECK (including boundaries), UNIQUE, NOT NULL, foreign key and `ON DELETE RESTRICT`; server defaults; JSONB round trip. |
+| `test_system_config_storage.py` | A-02 on real PostgreSQL: the default snapshot and an edited snapshot round-trip through the JSONB column and validate on read (integers stay integers); the default `facility_id` is the seeded interactive facility; every name the validator accepts satisfies the database constraints; tab/newline names show the gap that the validator closes. |
 | `test_facilities_api.py` | A-01b endpoint on real PostgreSQL through `TestClient` with `get_db` overridden to the test session: exact values for the three facilities, exactly 12 keys per facility, only Fridley interactive, approximate-coordinate attribution preserved, `Cache-Control` on 200, no cookie or authentication needed, no workspace or configuration data exposed, empty table → 503 envelope with `no-store`, reflects reseeding. The application's own `SessionLocal` and engine are patched to fail the test if used; one test proves that guard by removing the override. |
 | `test_facility_seed.py` | A-01 seed on real PostgreSQL: exact rows, only Fridley interactive, idempotency, drift repair, unexpected-row abort, foreign-key compatibility, CLI dry run (no connection), `--apply`, remote-host refusal, credential-safe errors, rollback after a failure past the upsert. |
 | `test_transactions.py` | Multi-table rollback on exception and on a database error; commit visibility between connections; row lock blocking (`SELECT ... FOR UPDATE`); concurrent duplicate version. Waits are bounded by `lock_timeout`. |
@@ -53,6 +54,8 @@ docker compose -f backend/docker-compose.test.yml down -v
 Isolation: constraint tests run in a rolled-back outer transaction; transaction tests commit and then `TRUNCATE` the four tables; migration tests reset the `public` schema first; each module re-migrates. Results do not depend on test order.
 
 Behavior without a database: locally the integration tests skip with a message; with `GRIDPROOF_REQUIRE_TEST_DB=1` (CI) they error.
+
+Configuration schema without a database: `backend/tests/test_system_config.py` and `backend/tests/test_configuration_name.py` (242 tests, including the explicit `load_snapshot` schema-version loader) check the default against an independent copy of the doc 05 example, accepted boundary edits, every rejection with its exact field path and reason (all integer fields against booleans, floats, strings, `None`, NaN and infinity; fixed values; unknown, missing and misspelled equipment), JSON input, error details that never echo input, immutability at every level, absence of mutable containers, and the name rules.
 
 Endpoint behavior without a database: `backend/tests/test_facilities_endpoint.py` (13 tests, mocked session) covers the response shape, database failure, empty catalog, unexpected error and corrupt row, secret-free responses and logs, `no-store` and request-id headers, no application-wide exception handler, read-only methods, and unchanged health routes.
 
@@ -131,6 +134,18 @@ Not run: the seed against Neon (not authorized).
 | Interleaved explicit file arguments | 12 setup errors; a pytest conftest quirk reproduced with older files only (see known limitations) |
 | Live server against the Docker database (`DATABASE_URL` set explicitly) | Seeded: 200 with 3 facilities and `cache-control: public, max-age=300`. Empty table: 503 `CATALOG_UNAVAILABLE`, `cache-control: no-store`, matching `x-request-id`. Database stopped: 503, same envelope. Server log held only the exception type and request id. |
 
-Not yet run: the GitHub Actions run for A-01b.
+GitHub Actions (run 39098605127, commit `7320f28`): Backend Checks and Frontend Checks succeeded; backend `179 passed, 1 warning`, none skipped; frontend 2 tests passed.
 
 The CI status of earlier pushes is user-reported, not observed here.
+
+### A-02 SystemConfigV1 (local Docker, `postgres:17`, 2026-10-18)
+
+| Check | Result |
+|---|---|
+| `ruff format --check` / `ruff check` on `app tests migrations/env.py` | Clean (32 files) |
+| `pytest -q` with the Docker database | 435 passed (256 new: 242 schema, schema-version and name tests, 14 PostgreSQL storage tests), 1 warning |
+| New files alone; storage file alone; three integration files in a different order | 256 passed; 14 passed; 37 passed (measured before the schema-version tests were added) |
+| `pytest -q` without `TEST_DATABASE_URL` | 328 passed, 107 skipped |
+| `GRIDPROOF_REQUIRE_TEST_DB=1`, no URL | 328 passed, 107 errors (intended; measured before the schema-version tests were added) |
+
+Not yet run: the GitHub Actions run for A-02.

@@ -52,7 +52,13 @@ Documentation only; no application code, migrations or CI changes.
 - Source limits are documented in `09-known-limitations.md`.
 - GitHub Actions run 39097553393: both jobs green, 156 backend tests passed. The seed was not run against Neon.
 
-## 2026-10-17 — A-01b public facilities endpoint (uncommitted)
+## 2026-10-17 — A-01b public facilities endpoint (`7320f28`)
 
 - Added `GET /api/v1/facilities` (`app/routes/facilities.py`, `app/core/errors.py`), router registration in `app/main.py`, and unit and PostgreSQL integration tests. `docs/05-api-contracts.md` is now 1.1 (`description` added; cache and error headers specified).
 - No schema change, migration, dependency, CI change or Neon access. Decision D-17 recorded. Error handling is scoped to the route (no application-wide handler).
+- GitHub Actions run 39098605127: both jobs green, 179 backend tests passed. The seed was not run against Neon and nothing was deployed.
+
+## 2026-10-18 — A-02 SystemConfigV1 schema (uncommitted)
+
+- Added `app/domain/system_config.py` (frozen strict models, default Fridley config, snapshot helpers, safe validation details, `ConfigurationName`) and schema, name and PostgreSQL storage tests. `docs/05-api-contracts.md` is now 1.2 (fixed fields, integers, load-demand distinction, name rules).
+- No endpoint, schema, migration, dependency, CI or frontend change; no Neon access. Decision D-18 recorded.
