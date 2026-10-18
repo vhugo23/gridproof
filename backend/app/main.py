@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException
-
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
