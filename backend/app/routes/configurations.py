@@ -18,8 +18,8 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
 from app.core.errors import error_response, new_request_id
+from app.core.origin import origin_allowed
 from app.db.session import get_db
 from app.domain.system_config import (
     ConfigurationName,
@@ -177,7 +177,7 @@ async def save_configuration_version(
 ):
     request_id = new_request_id()
     try:
-        if not _origin_allowed(request.headers.getlist("origin")):
+        if not origin_allowed(request.headers.getlist("origin")):
             logger.warning(
                 "write rejected: reason=origin_not_allowed (request %s)", request_id
             )
@@ -312,25 +312,6 @@ async def save_configuration_version(
         schema_version=saved.schema_version,
         saved_at=saved.saved_at.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     )
-
-
-def _allowed_origins() -> set[str]:
-    raw = get_settings().frontend_origins
-    return {item.strip().rstrip("/").lower() for item in raw.split(",") if item.strip()}
-
-
-def _origin_allowed(origin_headers: list[str]) -> bool:
-    """An Origin header, when present, must be on the configured allowlist.
-
-    With no allowlist configured every browser origin is rejected (fail closed). A
-    request without an Origin header (non-browser clients) is accepted: this is
-    defense in depth, not complete CSRF protection (docs/09-known-limitations.md).
-    """
-    if not origin_headers:
-        return True
-    if len(origin_headers) != 1:
-        return False
-    return origin_headers[0].strip().rstrip("/").lower() in _allowed_origins()
 
 
 def _is_json_media_type(content_type: str | None) -> bool:

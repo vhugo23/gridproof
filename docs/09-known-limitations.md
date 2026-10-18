@@ -54,6 +54,15 @@
 - **Strict stored-data checks block saves:** if the latest stored version is corrupt, saves return `500` rather than appending over it (no silent repair).
 - **Request framing:** the 256 KiB limit is enforced in the route on actual bytes read; the ASGI server itself has no separate body limit.
 
+## Startup-check notes (conference demo)
+
+- **Not a run of record:** `POST /api/v1/demo/startup-check` recomputes on every call and stores nothing, so there is no history, no stored evidence and no PDF. Persisted runs (API-10) remain planned.
+- **Single fixed scenario:** utility outage at t = 0, only G1 commanded. G2 settings are ignored. There is no restore, load step, start failure or breaker fault.
+- **Simplifications that favor the result:** 0 ms outage detection, 0 ms transfer, no ride-through gap on the battery, no conversion losses, no generator ramp and no battery recharge. They are listed in the response `assumptions`; changing them changes the numbers.
+- **Synthetic:** the model is not validated against real Cummins equipment and must not be presented as such.
+- **Depletion time** is recorded at the next whole millisecond; energy totals stay exact. Frames are discrete snapshots after each event, not integration intervals; integrating them can differ from the energy metrics, so clients must use `metrics` and not recompute energy from frames.
+- **Cost:** each call runs one indexed read and a small pure computation; there is no rate limit beyond the existing session issuance cap.
+
 ## Configuration schema notes (A-02)
 
 - Docs 01, 02 and 03 mention an adjustable load bank, but `SystemConfigV1` has no load-bank field by design: `equipment.load.critical_kw` is the baseline load, `set_load_kw` scenario events change demand during a simulation, and the load-bank visualization shows that simulated demand (decision D-18; doc 05 v1.2).

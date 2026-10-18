@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.routes.configurations import router as configurations_router
+from app.routes.demo import router as demo_router
 from app.routes.facilities import router as facilities_router
 from app.routes.session import router as session_router
 
@@ -17,6 +18,7 @@ app = FastAPI(
 )
 
 app.include_router(configurations_router)
+app.include_router(demo_router)
 app.include_router(facilities_router)
 app.include_router(session_router)
 

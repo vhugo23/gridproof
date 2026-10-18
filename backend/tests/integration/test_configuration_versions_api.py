@@ -22,10 +22,10 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session, sessionmaker
 
 import app.db.session as app_session
+from app.core import origin as origin_module
 from app.db.session import get_db
 from app.domain.system_config import default_system_config
 from app.main import app
-from app.routes import configurations as routes
 from app.seed.facilities import seed_facilities
 from app.services import configurations as service
 from app.services.sessions import resolve_session
@@ -80,7 +80,9 @@ def seeded(committing_engine):
 def origins(monkeypatch):
     def configure(value: str) -> None:
         monkeypatch.setattr(
-            routes, "get_settings", lambda: SimpleNamespace(frontend_origins=value)
+            origin_module,
+            "get_settings",
+            lambda: SimpleNamespace(frontend_origins=value),
         )
 
     configure("")
