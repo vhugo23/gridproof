@@ -177,4 +177,4 @@ GitHub Actions (run 39131471726, commit `8cf9a6b`): Backend Checks and Frontend 
 
 Manual check (2026-10-18): backend (uvicorn) on the Docker test database, called directly and through the unmodified local `next dev` rewrite with curl. `Set-Cookie` (`HttpOnly; Secure; SameSite=lax; Path=/; Max-Age`), `Cache-Control: no-store` and `Vary: Cookie` (plus Next's `Accept-Encoding`) arrived intact; a second call with the cookie returned `is_new:false` and no `Set-Cookie`. Not verified: Vercel to Render in a deployed environment.
 
-GitHub Actions has not run for A-04 at the time of writing.
+GitHub Actions (run 39133125159, commit `b363dad`): Backend Checks and Frontend Checks succeeded; backend `519 passed, 1 warning`, none skipped; frontend 2 tests passed.
