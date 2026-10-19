@@ -1,4 +1,6 @@
 import type {
+  CapacityCheckEvidence,
+  CapacityRequirement,
   CurrentConfiguration,
   Facility,
   StartupCheckEvidence,
@@ -226,3 +228,141 @@ export function evidence(options: {
     ],
   };
 }
+
+type ReqSpec = [
+  status: "pass" | "fail",
+  required: number,
+  capacity: number,
+  margin: number,
+  pct: number,
+];
+
+function capacityRequirement(
+  id: CapacityRequirement["requirement_id"],
+  [status, required, capacity, margin, pct]: ReqSpec,
+): CapacityRequirement {
+  const unit = id === "KW_CAPACITY" ? "kW" : "kVA";
+  return {
+    requirement_id: id,
+    status,
+    comparator: "<=",
+    required,
+    capacity,
+    unit,
+    margin,
+    margin_pct_of_required: pct,
+    explanation: `Backend explanation: required ${required.toFixed(2)} ${unit} against ${capacity} ${unit} (${status}).`,
+  };
+}
+
+function capacityPackage(
+  letter: string,
+  kw: number,
+  kva: number,
+  kwSpec: ReqSpec,
+  kvaSpec: ReqSpec,
+) {
+  return {
+    id: `synthetic-${letter.toLowerCase()}`,
+    label: `Synthetic Package ${letter}`,
+    rated_kw: kw,
+    rated_kva: kva,
+    rated_power_factor: 0.8,
+    requirements: [
+      capacityRequirement("KW_CAPACITY", kwSpec),
+      capacityRequirement("KVA_CAPACITY", kvaSpec),
+    ],
+    both_requirements_pass: kwSpec[0] === "pass" && kvaSpec[0] === "pass",
+  };
+}
+
+const CAPACITY_ASSUMPTIONS = [
+  { id: "A1", text: "Backend assumption one: the packages are synthetic." },
+  { id: "A7", text: "Backend assumption seven: derating is not checked." },
+];
+
+/** Hand-calculated: 400 kW at 0.80 pf is 500 kVA (backend test case 1). */
+export const CAPACITY_CASE_1: CapacityCheckEvidence = {
+  model_version: "capacity-check-v1",
+  inputs: { real_power_kw: 400, power_factor: 0.8, capacity_margin_pct: 0 },
+  demand: {
+    real_power_kw: 400,
+    apparent_power_kva: 500,
+    required_kw: 400,
+    required_kva: 500,
+  },
+  assumptions: CAPACITY_ASSUMPTIONS,
+  packages: [
+    capacityPackage(
+      "A",
+      200,
+      250,
+      ["fail", 400, 200, -200, -50],
+      ["fail", 500, 250, -250, -50],
+    ),
+    capacityPackage(
+      "B",
+      320,
+      400,
+      ["fail", 400, 320, -80, -20],
+      ["fail", 500, 400, -100, -20],
+    ),
+    capacityPackage(
+      "C",
+      480,
+      600,
+      ["pass", 400, 480, 80, 20],
+      ["pass", 500, 600, 100, 20],
+    ),
+    capacityPackage(
+      "D",
+      640,
+      800,
+      ["pass", 400, 640, 240, 60],
+      ["pass", 500, 800, 300, 60],
+    ),
+  ],
+};
+
+/** Hand-calculated: 300 kW at 0.70 pf is 428.57 kVA; B passes kW but fails kVA (case 2). */
+export const CAPACITY_CASE_2: CapacityCheckEvidence = {
+  model_version: "capacity-check-v1",
+  inputs: { real_power_kw: 300, power_factor: 0.7, capacity_margin_pct: 0 },
+  demand: {
+    real_power_kw: 300,
+    apparent_power_kva: 428.57,
+    required_kw: 300,
+    required_kva: 428.57,
+  },
+  assumptions: CAPACITY_ASSUMPTIONS,
+  packages: [
+    capacityPackage(
+      "A",
+      200,
+      250,
+      ["fail", 300, 200, -100, -33.33],
+      ["fail", 428.57, 250, -178.57, -41.67],
+    ),
+    capacityPackage(
+      "B",
+      320,
+      400,
+      ["pass", 300, 320, 20, 6.67],
+      ["fail", 428.57, 400, -28.57, -6.67],
+    ),
+    capacityPackage(
+      "C",
+      480,
+      600,
+      ["pass", 300, 480, 180, 60],
+      ["pass", 428.57, 600, 171.43, 40],
+    ),
+    capacityPackage(
+      "D",
+      640,
+      800,
+      ["pass", 300, 640, 340, 113.33],
+      ["pass", 428.57, 800, 371.43, 86.67],
+    ),
+  ],
+};

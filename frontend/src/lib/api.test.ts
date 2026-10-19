@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { apiError, current, json } from "@/test/fixtures";
+import { CAPACITY_CASE_1, apiError, current, json } from "@/test/fixtures";
 import {
   ApiError,
   getFacilities,
   loadCurrentConfiguration,
+  runCapacityCheck,
   saveVersion,
 } from "./api";
 
@@ -86,5 +87,45 @@ describe("api client", () => {
       kind: "unauthorized",
     });
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("runCapacityCheck", () => {
+  it("posts JSON to the stateless endpoint and keeps the exact decimal text", async () => {
+    const fetchMock = stubFetch(json(200, CAPACITY_CASE_1));
+    const result = await runCapacityCheck({
+      real_power_kw: 228,
+      power_factor: 0.57,
+      capacity_margin_pct: 0,
+    });
+    expect(result.packages).toHaveLength(4);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/v1/demo/capacity-check");
+    expect(init.method).toBe("POST");
+    expect(init.headers).toEqual({ "Content-Type": "application/json" });
+    expect(init.body).toBe(
+      '{"real_power_kw":228,"power_factor":0.57,"capacity_margin_pct":0}',
+    );
+  });
+
+  it("classifies 422 as validation with field details and 403 as forbidden", async () => {
+    stubFetch(
+      apiError(422, "VALIDATION_ERROR", [
+        { field: "real_power_kw", reason: "Must be between 1 and 2000" },
+      ]),
+      apiError(403, "FORBIDDEN"),
+    );
+    const request = { real_power_kw: 0, power_factor: 0.8 };
+    const invalid = (await runCapacityCheck(request).catch(
+      (e: unknown) => e,
+    )) as ApiError;
+    expect(invalid.kind).toBe("validation");
+    expect(invalid.details).toEqual([
+      { field: "real_power_kw", reason: "Must be between 1 and 2000" },
+    ]);
+    const forbidden = (await runCapacityCheck(request).catch(
+      (e: unknown) => e,
+    )) as ApiError;
+    expect(forbidden.kind).toBe("forbidden");
   });
 });

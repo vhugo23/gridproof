@@ -71,6 +71,16 @@
 - **Memory is local:** the remembered G1 failure and a locked battery prediction live in component state and are lost on reload or when the challenge is dismissed.
 - **Preset values:** 15 s (G1 long delay), 10 s (repair) and 400 kW (battery load) are fixed teaching values, not recommendations.
 
+## Daventry workbench notes (2026-10-19)
+
+- **Screening only:** one steady load at one constant lagging power factor against four invented packages with one continuous rating each (defined at 0.8 pf). It does not model derating, step loads or motor starting, paralleling, fuel, cooling, noise, emissions or site constraints, and it is not a sizing or compliance check or a product recommendation.
+- **Synthetic:** the package ratings are invented for GridProof; they are not Cummins products or data, and the workbench is not the plant's software or operations.
+- **Input ranges are exercise limits:** 1 to 2000 kW, power factor 0.50 to 1.00 (2 decimals), margin 0 to 50 %. Above the largest package every requirement fails by design.
+- **Catalog text:** the Daventry catalog description still ends "Informational context only; GridProof does not simulate this site." That remains true of the real site and is shown under "About the real site"; updating the wording is an optional later seed change that needs separate approval.
+- **No persistence:** inputs and results are not saved; there is no history or report.
+- **No rate limit** beyond the 4 KiB body cap; the endpoint is a few multiplications and needs no database.
+- **Shared helpers:** `routes/daventry.py` imports private helpers from `routes/demo.py` rather than moving them; a later refactor could extract them.
+
 ## Configuration schema notes (A-02)
 
 - Docs 01, 02 and 03 mention an adjustable load bank, but `SystemConfigV1` has no load-bank field by design: `equipment.load.critical_kw` is the baseline load, `set_load_kw` scenario events change demand during a simulation, and the load-bank visualization shows that simulated demand (decision D-18; doc 05 v1.2).

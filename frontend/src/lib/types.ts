@@ -166,3 +166,52 @@ export type StartupCheckEvidence = {
   };
   requirements: EvidenceRequirement[];
 };
+
+// Daventry capacity check (docs/05-api-contracts.md API-17). Rendered as returned;
+// the frontend never recomputes demand, margins or PASS/FAIL.
+
+export type CapacityCheckRequest = {
+  real_power_kw: number;
+  power_factor: number;
+  /** Omitted means 0. */
+  capacity_margin_pct?: number;
+};
+
+export type CapacityRequirement = {
+  requirement_id: "KW_CAPACITY" | "KVA_CAPACITY";
+  status: "pass" | "fail";
+  comparator: "<=";
+  required: number;
+  capacity: number;
+  unit: "kW" | "kVA";
+  margin: number;
+  margin_pct_of_required: number;
+  explanation: string;
+};
+
+export type CapacityPackage = {
+  id: string;
+  label: string;
+  rated_kw: number;
+  rated_kva: number;
+  rated_power_factor: number;
+  requirements: CapacityRequirement[];
+  both_requirements_pass: boolean;
+};
+
+export type CapacityCheckEvidence = {
+  model_version: string;
+  inputs: {
+    real_power_kw: number;
+    power_factor: number;
+    capacity_margin_pct: number;
+  };
+  demand: {
+    real_power_kw: number;
+    apparent_power_kva: number;
+    required_kw: number;
+    required_kva: number;
+  };
+  assumptions: Array<{ id: string; text: string }>;
+  packages: CapacityPackage[];
+};

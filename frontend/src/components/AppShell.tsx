@@ -7,6 +7,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { experienceFor, DAVENTRY_HASH } from "@/lib/experiences";
 import { useFacilities } from "@/lib/useFacilities";
 import { useWorkspaceConfig } from "@/lib/useWorkspaceConfig";
 import { usePlayback } from "@/lib/usePlayback";
@@ -15,6 +16,7 @@ import type { Facility } from "@/lib/types";
 import FacilityMap from "./map/FacilityMap";
 import FacilityCard from "./map/FacilityCard";
 import IndustryGallery from "./gallery/IndustryGallery";
+import Workbench from "./daventry/Workbench";
 import LabScene from "./lab/LabScene";
 import type { AssetId } from "./lab/assets";
 import ChallengePanel from "./challenges/ChallengePanel";
@@ -87,6 +89,7 @@ function Footer() {
 export default function AppShell() {
   const hash = useSyncExternalStore(subscribeHash, getHash, getServerHash);
   const inLab = hash === LAB_HASH;
+  const inWorkbench = hash === DAVENTRY_HASH;
   const [enteringId, setEnteringId] = useState<string | null>(null);
   const [activeFacilityId, setActiveFacilityId] = useState("fridley");
   const [selected, setSelected] = useState<AssetId | null>(null);
@@ -150,6 +153,12 @@ export default function AppShell() {
     enterLab(facility);
   };
 
+  // Synthetic exercises open by hash like the lab, but need no session or workspace.
+  const openExperience = (facility: Facility) => {
+    const experience = experienceFor(facility.id);
+    if (experience) window.location.hash = experience.hash;
+  };
+
   const leaveLab = () => {
     setChallenge(null);
     window.location.hash = "";
@@ -167,6 +176,18 @@ export default function AppShell() {
       : (inLab ? ws.phase === "ready" : facilities !== null)
         ? "connected"
         : "checking";
+
+  if (inWorkbench) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header right={<ApiChip state={apiState} />} />
+        <main className="flex-1 px-5 py-3">
+          <Workbench onBack={leaveLab} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!inLab) {
     const facility =
@@ -189,8 +210,8 @@ export default function AppShell() {
                 Enter a synthetic virtual lab inspired by the Power Integration
                 Center in Fridley, Minnesota: configure a power system, run a
                 utility-outage startup test and review the evidence. Markers are
-                approximate city-level locations; Seymour and Daventry are
-                informational only.
+                approximate city-level locations. Seymour is informational;
+                Daventry offers an independent synthetic generator workbench.
               </p>
             </div>
             {facilities && facility ? (
@@ -203,7 +224,11 @@ export default function AppShell() {
                   onEnter={enterFromMap}
                 />
                 <div className="relative min-h-0">
-                  <FacilityCard facility={facility} onEnter={enterFromMap} />
+                  <FacilityCard
+                    facility={facility}
+                    onEnter={enterFromMap}
+                    onOpenExperience={openExperience}
+                  />
                 </div>
               </div>
             ) : facilitiesError ? (

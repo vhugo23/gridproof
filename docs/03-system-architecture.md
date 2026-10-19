@@ -203,7 +203,7 @@ Supported values include generator startup delay, start failure, equipment/break
 1. Browser loads `/` from Vercel; UI immediately shows a branded independent-prototype notice and facility map or accessible site-list fallback.
 2. `GET /api/v1/session` creates/reuses demo workspace; `GET /api/v1/facilities` returns static verified location catalog (seeded, cached).
 3. MapLibre loads a third-party tile style; marker selection opens a grounded site info card.
-4. **Fridley** → `/lab/fridley`; **Seymour/Daventry** → information-only card; never fabricate live site statuses.
+4. **Fridley** → `/lab/fridley`; **Seymour** → information-only card; **Daventry** → factual card plus an entry to the independent synthetic workbench (`#daventry-workbench`, stateless API-17, no session); never fabricate live site statuses.
 5. If tiles fail, the list and direct Fridley navigation continue working.
 
 ### B. Inspect and configure

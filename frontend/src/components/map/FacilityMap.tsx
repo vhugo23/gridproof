@@ -1,5 +1,6 @@
 "use client";
 
+import { experienceFor } from "@/lib/experiences";
 import { project, MAP_VIEW } from "@/lib/projection";
 import type { Facility } from "@/lib/types";
 import { BORDERS_PATH, GRATICULE_PATH, LAND_PATH } from "./worldPaths";
@@ -104,6 +105,7 @@ export default function FacilityMap({
           {facilities.map((facility) => {
             const { x, y } = project(facility.latitude, facility.longitude);
             const interactive = facility.is_interactive;
+            const experience = interactive ? null : experienceFor(facility.id);
             const active = facility.id === activeId;
             const label = LABEL_OFFSET[facility.id] ?? {
               dx: 16,
@@ -152,13 +154,19 @@ export default function FacilityMap({
                     y={13}
                     textAnchor={label.anchor}
                     className={`text-[9.5px] font-medium tracking-[0.14em] uppercase ${
-                      interactive ? "fill-gp-red" : "fill-gp-steel"
+                      interactive || experience
+                        ? "fill-gp-red"
+                        : "fill-gp-steel"
                     }`}
                     stroke="#0b0d10"
                     strokeWidth="3"
                     paintOrder="stroke"
                   >
-                    {interactive ? "Interactive lab" : "Informational"}
+                    {interactive
+                      ? "Interactive lab"
+                      : experience
+                        ? experience.kicker
+                        : "Informational"}
                   </text>
                 </g>
                 <g
@@ -167,7 +175,9 @@ export default function FacilityMap({
                   aria-label={`${facility.city} — ${
                     interactive
                       ? "interactive virtual lab"
-                      : "informational site"
+                      : experience
+                        ? "synthetic generator workbench"
+                        : "informational site"
                   }`}
                   className="cursor-pointer outline-none [&:focus-visible>circle:first-child]:stroke-gp-red"
                   onClick={() => select(facility)}
@@ -195,7 +205,13 @@ export default function FacilityMap({
                     <circle
                       r="5"
                       fill="var(--gp-bg)"
-                      stroke={active ? "#fff" : "var(--gp-steel)"}
+                      stroke={
+                        active
+                          ? "#fff"
+                          : experience
+                            ? "var(--gp-red)"
+                            : "var(--gp-steel)"
+                      }
                       strokeWidth="2"
                     />
                   )}

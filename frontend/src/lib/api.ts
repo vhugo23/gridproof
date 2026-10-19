@@ -1,4 +1,6 @@
 import type {
+  CapacityCheckEvidence,
+  CapacityCheckRequest,
   CurrentConfiguration,
   ErrorDetail,
   FacilitiesResponse,
@@ -185,4 +187,18 @@ export async function loadCurrentConfiguration(): Promise<CurrentConfiguration> 
     }
     throw error;
   }
+}
+
+/**
+ * Stateless and session-free (API-17): the server validates the numbers and
+ * returns the deterministic capacity check for four synthetic packages.
+ */
+export function runCapacityCheck(
+  payload: CapacityCheckRequest,
+): Promise<CapacityCheckEvidence> {
+  return request<CapacityCheckEvidence>("/demo/capacity-check", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 }

@@ -1,6 +1,6 @@
 # GridProof — Project Status
 
-**Updated:** 2026-10-19 · **Branch:** `main` · **Latest source commit reported:** `e33acaa57200c8ea4f0744bafc5d6d7c6734fac4`. The commit currently deployed on Vercel has **not** been verified (Vercel was not inspected). Guided challenges (below) were verified locally; see the section for their commit and CI status.
+**Updated:** 2026-10-19 · **Branch:** `main` · **Latest source commit:** `c52b553` (guided challenges, CI green). The deployed Vercel commit has **not** been verified through Vercel. A read-only fetch of the public site at about 17:20 UTC on 2026-10-19, shortly after the push, served a JavaScript chunk containing the new challenge text, which suggests the push triggered an automatic production deploy; it was not confirmed in the Vercel dashboard and no production smoke test has been run on this build.
 
 ## Current position
 
@@ -39,7 +39,7 @@ F-11 → A-01 → A-01b → A-02 → A-03 (atomic workspace initialization) → 
 
 ## Next three recommended actions
 
-1. Review the guided-challenge change (local, uncommitted). On approval: commit, then deploy separately and smoke-test the public URL, rehearsing the recorded-demo fallback.
+1. Run the production smoke test on the public URL (it creates demo-workspace versions; needs approval) and rehearse the recorded-demo fallback. Confirm in Vercel whether pushes to `main` auto-deploy.
 2. Verify the deployed Vercel commit and the Render `FRONTEND_ORIGINS` value, and record them here.
 3. Record the SHPE demo (G-06) from the deployed app. Post-conference: Daventry screening workbench (amendment approved, not built), Seymour engine test-plan exercise and vehicle application ideas (roadmap concepts only).
 
@@ -65,4 +65,8 @@ Reported by the project owner; not re-verified by the assistant in this session.
 
 ## Guided challenges (H-01, H-02; 2026-10-19; not deployed)
 
-Status: verified locally (frontend 10 files, 99 tests; backend 1324 tests on Docker `postgres:17`); commit and CI result are recorded below once available. Frontend only, plus one backend regression test. No API, schema, seed or dependency change. Launched only from the Power generation and Battery storage briefs; a normal map-to-lab entry is unchanged. Details in [`06-development-log.md`](06-development-log.md) and [`07-testing-strategy.md`](07-testing-strategy.md); decisions D-24 to D-26 in [`08-decisions.md`](08-decisions.md).
+Status: **Done** (H-01, H-02, H-03). Commit `c52b553`; GitHub Actions run 39293011501 green on both jobs (99 frontend tests in 10 files, 1324 backend tests). Verified locally before the push on Docker `postgres:17`. Frontend only, plus one backend regression test. No API, schema, seed or dependency change. Launched only from the Power generation and Battery storage briefs; a normal map-to-lab entry is unchanged. Details in [`06-development-log.md`](06-development-log.md) and [`07-testing-strategy.md`](07-testing-strategy.md); decisions D-24 to D-26 in [`08-decisions.md`](08-decisions.md).
+
+## Daventry synthetic workbench (H-10; 2026-10-19)
+
+Status at commit time: **verified locally** (backend 1416 tests; frontend 11 files, 118 tests; browser walkthrough and layout audit; details in [`07-testing-strategy.md`](07-testing-strategy.md#daventry-workbench-local-2026-10-19)). CI and public-deployment results are not recorded here yet. Adds `POST /api/v1/demo/capacity-check` (doc 05 API-17, D-27) and the Daventry workbench. No migration, seed, model, dependency or CI change; Neon untouched. Deployment note: the Vercel frontend appears to deploy on every push to `main` (observed once), and the new endpoint needs the Render backend to redeploy too; until it does, only the Daventry workbench would show an unavailable state.
