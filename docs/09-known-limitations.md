@@ -9,7 +9,7 @@
 | ID | Limitation | Planned resolution |
 |---|---|---|
 | L-01 | Backend routes: health, `GET /api/v1/facilities`, `GET /api/v1/session`, `GET /api/v1/configurations/current` and `POST /api/v1/configurations/{id}/versions`. No scenario or run endpoints exist. | Phase A onward |
-| L-02 | `facility_catalog` is empty in Neon. The seed module exists (A-01) but has not been applied to Neon; that needs separate approval. | Apply with owner approval |
+| L-02 | *Superseded 2026-10-19:* the deployed app serves the facility catalog and sessions, which require the seed (owner-observed). The apply step itself is not recorded in these docs. | None |
 | L-03 | `GET /api/v1/health` returns `{status, service}`. The approved contract (doc 05 API-01) also requires `version` and `model_version`. | C-11 |
 | L-04 | The original two backend tests mock the database. F-11 added real-PostgreSQL schema, migration and transaction tests, but CI confirmation is pending and there is no application code to test yet. | Confirm CI; extend with A-01 onward |
 | L-05 | `SystemConfigV1` exists (A-02) but no workspace lifecycle, session endpoint or version-saving service uses it yet. | A-03 to A-06 |
@@ -34,7 +34,7 @@
 - A commit with an unknown outcome (connection lost during commit) returns 503 without a cookie and may leave an unreachable workspace row; it expires and counts toward the cap. Cleanup of expired rows is still undefined.
 - `GET /session` creates data (documented exception). Cross-site requests can trigger issuance within the cap; the response carries nothing worth stealing and the cookie is `SameSite=Lax`.
 - `Secure` cookies work on `http://localhost` in Chrome and Firefox but not in Safari; use HTTPS or another browser for local manual checks.
-- Cookie forwarding through the deployed Vercel rewrite to Render is still unproven. A-04 tests the backend behind forwarded headers and was checked by hand through the local `next dev` rewrite (`Set-Cookie`, `Cache-Control: no-store` and `Vary: Cookie` preserved; Next appends `Accept-Encoding` to `Vary`; reuse with the cookie returned `is_new:false`). That local check used the Docker test database, not Vercel or Render. Verify in staging (G-04).
+- Cookie forwarding through the deployed Vercel rewrite to Render was observed working by the owner on 2026-10-19 (session and a saved version); it has no automated test. The following describes the earlier local check. A-04 tests the backend behind forwarded headers and was checked by hand through the local `next dev` rewrite (`Set-Cookie`, `Cache-Control: no-store` and `Vary: Cookie` preserved; Next appends `Accept-Encoding` to `Vary`; reuse with the cookie returned `is_new:false`). That local check used the Docker test database, not Vercel or Render. Verify in staging (G-04).
 - An unseeded database makes `/session` return 503 until the facility seed is applied.
 
 ## Current configuration notes (A-05)
@@ -47,7 +47,7 @@
 ## Version saving notes (A-06)
 
 - **CSRF:** Origin checking is defense in depth, not complete protection. A request without an `Origin` header is accepted (non-browser clients), and the allowlist cannot tell apart different pages of an allowed origin or other same-site origins. The remaining protection is `SameSite=Lax` (cookies are not sent on cross-site POSTs) and the `application/json` requirement. Same-site sibling origins and non-browser clients that obtain a cookie are not covered.
-- **`FRONTEND_ORIGINS`:** unset or empty means every browser `Origin` is rejected, so the frontend's writes fail until it is configured on the backend host (local development: `http://localhost:3000`; production: the Vercel origin). Setting it on Render is a deployment action that has not been done.
+- **`FRONTEND_ORIGINS`:** unset or empty means every browser `Origin` is rejected, so the frontend's writes fail until it is configured on the backend host (local development: `http://localhost:3000`; production: the Vercel origin). Saves from the deployed frontend were observed succeeding on 2026-10-19, so the backend accepts that origin; the expected value is `https://gridproof-seven.vercel.app`, but the exact Render value is not independently verified.
 - **Replay is content matching, not idempotency:** a different request with identical content sent right after a save is answered `200` with the existing version instead of `409`. It only covers the immediately previous version; there is no idempotency key for saves.
 - **Names are not versioned:** the name is stored on the configuration row and overwritten by each save, so older versions carry no name. Anything needing the name at save time (reports, run evidence) must capture it itself.
 - **No version cap or save rate limit:** each save stores one small normalized snapshot, but a workspace can create unlimited versions until its 7-day expiry. Adding a cap is a new product rule and needs approval.
@@ -62,6 +62,14 @@
 - **Synthetic:** the model is not validated against real Cummins equipment and must not be presented as such.
 - **Depletion time** is recorded at the next whole millisecond; energy totals stay exact. Frames are discrete snapshots after each event, not integration intervals; integrating them can differ from the energy metrics, so clients must use `metrics` and not recompute energy from frames.
 - **Cost:** each call runs one indexed read and a small pure computation; there is no rate limit beyond the existing session issuance cap.
+
+## Guided-challenge notes (2026-10-19)
+
+- **Narrow levers:** the 250 kW inverter and generator ratings are fixed and only G1 is commanded, so the battery challenge works only through G1's delay and the critical load. Richer exercises (G2, transfer delay) would need a new scenario and API change.
+- **Model scope:** results inherit the startup check's simplifications (no detection delay, instantaneous transfer, no battery ride-through gap, no losses). The panel says so.
+- **Versions accumulate:** every save during a challenge creates a new immutable version in the visitor's workspace. No per-workspace cap was found or checked.
+- **Memory is local:** the remembered G1 failure and a locked battery prediction live in component state and are lost on reload or when the challenge is dismissed.
+- **Preset values:** 15 s (G1 long delay), 10 s (repair) and 400 kW (battery load) are fixed teaching values, not recommendations.
 
 ## Configuration schema notes (A-02)
 
@@ -108,5 +116,5 @@
 ## Unverified
 
 - CI results are user-reported. They were not observed in this session.
-- Behavior of `Set-Cookie` forwarding through the Vercel rewrite to Render is unproven (doc 03 §14).
+- Behavior of `Set-Cookie` forwarding through the Vercel rewrite to Render was observed working by the owner (2026-10-19) but is not covered by automated tests (doc 03 §14).
 - Render and Neon cold-start behavior is unmeasured.

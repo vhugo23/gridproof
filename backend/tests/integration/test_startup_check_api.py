@@ -214,6 +214,29 @@ def test_baseline_and_modified_versions_give_the_documented_results(client):
         assert body["scenario"]["horizon_ms"] == 300000
 
 
+def test_critical_load_above_the_inverter_limit_leaves_unserved_energy(client):
+    """Guided battery challenge: demand above the 250 kW inverter until G1 is ready.
+
+    Hand calculation: (400 - 250) kW x 15 s = 2250 kW*s; 2250 / 3600 = 0.625 kWh.
+    """
+    ws = new_workspace(client)
+    ws.save(1, delay=15, load=400)
+    body = ws.check(version=2).json()
+
+    assert body["inputs"]["load_kw"] == 400
+    assert body["inputs"]["battery_inverter_kw"] == 250
+    assert body["metrics"]["unserved_energy_kwh"] == 0.625
+    continuity = requirement(body, "CRITICAL_LOAD_CONTINUITY")
+    assert continuity["status"] == "fail"
+    assert continuity["observed"] == 0.625
+    outage = next(e for e in body["events"] if e["type"] == "utility_outage")
+    frame = next(f for f in body["frames"] if f["event_id"] == outage["id"])
+    assert frame["power_kw"]["battery_kw"] == 250
+    assert frame["power_kw"]["unserved_kw"] == 150
+    # Readiness is judged separately: 15 s still fails the 10 s requirement.
+    assert requirement(body, "G1_READY_WITHIN_10S")["status"] == "fail"
+
+
 def test_response_shape(client):
     body = new_workspace(client).check().json()
     assert set(body) == {

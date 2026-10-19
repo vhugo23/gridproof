@@ -3,12 +3,13 @@
 import Image from "next/image";
 import { useEffect, useId, useRef } from "react";
 import type { Application } from "./applications";
+import type { ChallengeId } from "../challenges/deriveChallenge";
 import type { AssetId } from "../lab/assets";
 
 type Props = {
   application: Application | null;
   onClose: () => void;
-  onOpenLab: (asset: AssetId | null) => void;
+  onOpenLab: (asset: AssetId | null, challenge?: ChallengeId) => void;
 };
 
 export default function ApplicationDialog({
@@ -103,7 +104,7 @@ export default function ApplicationDialog({
                 <>
                   <button
                     type="button"
-                    onClick={() => onOpenLab(action.asset)}
+                    onClick={() => onOpenLab(action.asset, action.challenge)}
                     className="w-full rounded-md bg-gp-red px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-gp-red/20 transition hover:brightness-110"
                   >
                     {action.label} →

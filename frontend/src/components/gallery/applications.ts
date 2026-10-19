@@ -1,9 +1,12 @@
+import type { ChallengeId } from "../challenges/deriveChallenge";
 import type { AssetId } from "../lab/assets";
 
 export type ApplicationAction = {
   label: string;
   /** Equipment preselected in the lab inspector, or null to just open the lab. */
   asset: AssetId | null;
+  /** Guided challenge shown above the inspector, if any. */
+  challenge?: ChallengeId;
   /** Honest note about what the lab does and does not model. */
   note: string;
 };
@@ -36,9 +39,10 @@ export const APPLICATIONS: Application[] = [
       "Fuel and runtime: how long a site must run unattended shapes fuel storage and refueling plans.",
     ],
     action: {
-      label: "Open Generator G1 in the Fridley lab",
+      label: "Start the G1 startup challenge in the Fridley lab",
       asset: "g1",
-      note: "The lab includes two synthetic generators whose startup delay you can edit. All values are synthetic.",
+      challenge: "g1-startup",
+      note: "Lengthen G1's startup delay, save it, run the real startup check and inspect the readiness requirement. It uses your own workspace and never saves for you. All values are synthetic.",
     },
   },
   {
@@ -76,9 +80,10 @@ export const APPLICATIONS: Application[] = [
       "Isolation and maintenance: equipment must be separable so one part can be serviced safely.",
     ],
     action: {
-      label: "Open Battery Storage in the Fridley lab",
+      label: "Start the battery continuity challenge in the Fridley lab",
       asset: "battery",
-      note: "The lab includes a synthetic battery and switchgear, and compares startup behavior before and after a configuration change. All values are synthetic.",
+      challenge: "battery-continuity",
+      note: "Predict, then verify with the real startup check, what happens when critical demand exceeds the battery inverter limit. It uses your own workspace and never saves for you. All values are synthetic.",
     },
   },
   {

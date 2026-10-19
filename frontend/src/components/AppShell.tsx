@@ -17,6 +17,8 @@ import FacilityCard from "./map/FacilityCard";
 import IndustryGallery from "./gallery/IndustryGallery";
 import LabScene from "./lab/LabScene";
 import type { AssetId } from "./lab/assets";
+import ChallengePanel from "./challenges/ChallengePanel";
+import type { ChallengeId } from "./challenges/deriveChallenge";
 import Inspector, { SavePanel } from "./inspector/Inspector";
 import ComparePanel, { type Side } from "./compare/ComparePanel";
 
@@ -92,6 +94,7 @@ export default function AppShell() {
     "inspector",
   );
   const [wide, setWide] = useState(false);
+  const [challenge, setChallenge] = useState<ChallengeId | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
@@ -132,15 +135,23 @@ export default function AppShell() {
     [enteringId],
   );
 
-  const openLabFrom = (asset: AssetId | null) => {
+  const openLabFrom = (asset: AssetId | null, next?: ChallengeId) => {
     const lab = facilities?.find((f) => f.is_interactive);
     if (!lab) return;
+    setChallenge(next ?? null);
     setSelected(asset);
     setRightTab("inspector");
     enterLab(lab);
   };
 
+  // A challenge exists only when launched from an application brief.
+  const enterFromMap = (facility: Facility) => {
+    setChallenge(null);
+    enterLab(facility);
+  };
+
   const leaveLab = () => {
+    setChallenge(null);
     window.location.hash = "";
     history.replaceState(
       null,
@@ -189,10 +200,10 @@ export default function AppShell() {
                   activeId={facility.id}
                   onActive={setActiveFacilityId}
                   enteringId={enteringId}
-                  onEnter={enterLab}
+                  onEnter={enterFromMap}
                 />
                 <div className="relative min-h-0">
-                  <FacilityCard facility={facility} onEnter={enterLab} />
+                  <FacilityCard facility={facility} onEnter={enterFromMap} />
                 </div>
               </div>
             ) : facilitiesError ? (
@@ -461,6 +472,24 @@ export default function AppShell() {
                   </button>
                 )}
               </div>
+              {challenge && (
+                <ChallengePanel
+                  key={challenge}
+                  challenge={challenge}
+                  server={server}
+                  draft={ws.draft}
+                  dirty={ws.dirty}
+                  result={comparison.result}
+                  runStatus={comparison.status}
+                  runBlockedReason={blockedReason}
+                  onChangeDraft={ws.updateDraft}
+                  onOpenInspector={() => {
+                    setSelected(challenge === "g1-startup" ? "g1" : "load");
+                    setRightTab("inspector");
+                  }}
+                  onDismiss={() => setChallenge(null)}
+                />
+              )}
               {rightTab === "inspector" ? (
                 <div className="px-1">
                   <Inspector

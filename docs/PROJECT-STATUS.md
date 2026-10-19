@@ -1,12 +1,12 @@
 # GridProof — Project Status
 
-**Updated:** 2026-10-18 · **Branch:** `main` · **Last verified commit:** `cd09696` (simulator; the comparison UI is committed after it)
+**Updated:** 2026-10-19 · **Branch:** `main` · **Latest source commit reported:** `e33acaa57200c8ea4f0744bafc5d6d7c6734fac4`. The commit currently deployed on Vercel has **not** been verified (Vercel was not inspected). Guided challenges (below) were verified locally; see the section for their commit and CI status.
 
 ## Current position
 
 - **M0 Foundation: Done** (F-01 to F-09). Next.js 16 frontend, FastAPI backend, Neon connection, Alembic migrations 001 and 002, test tooling and CI.
-- **M1 First vertical slice: Done for the conference scope** (A-01 to A-07 plus the demo slices below). Conference execution plan: map, lab, configuration editor, deterministic startup check, comparison UI. Deployment is not done.
-- **Sprint 1 (agreed):** F-11 isolated PostgreSQL integration testing, then A-01 facility catalog seeding. The documentation foundation is committed (`99dd538`). **F-11 is Done** (commit `2041663`, CI green on both jobs). **A-01 is Done** (commit `09a49d6`, CI green on both jobs, 156 backend tests); the seed has **not** been applied to Neon. **A-01b is Done** (`GET /api/v1/facilities`, commit `7320f28`, CI green on both jobs, 179 backend tests). **A-02 is Done** (`SystemConfigV1`, commit `74fe5e2`, CI green on both jobs, 435 backend tests). **A-03 is Done** (atomic workspace initialization service, commit `8cf9a6b`, CI green on both jobs, 462 backend tests). **A-04 is Done** (`GET /api/v1/session`, commit `b363dad`, CI green on both jobs, 519 backend tests). **A-05 is Done** (`GET /api/v1/configurations/current`, commit `d9427bf`, CI green on both jobs, 554 backend tests). **A-06 is Done** (`POST /api/v1/configurations/{id}/versions`, commit `d117df2`, CI green on both jobs, 663 backend tests). **A-07 is Done** (commit `b79d012`, CI run 39139803047 green on both jobs: 663 backend tests, 21 frontend tests). Next: the startup-delay simulator and `POST /api/v1/demo/startup-check` (approved scope).
+- **M1 First vertical slice: Done for the conference scope** (A-01 to A-07 plus the demo slices below). Conference execution plan: map, lab, configuration editor, deterministic startup check, comparison UI. **Publicly deployed** at https://gridproof-seven.vercel.app/ (see [Deployment observations](#deployment-observations-2026-10-19)).
+- **Sprint 1 (agreed):** F-11 isolated PostgreSQL integration testing, then A-01 facility catalog seeding. The documentation foundation is committed (`99dd538`). **F-11 is Done** (commit `2041663`, CI green on both jobs). **A-01 is Done** (commit `09a49d6`, CI green on both jobs, 156 backend tests); the seed had not been applied to Neon at that point (superseded: see Deployment observations). **A-01b is Done** (`GET /api/v1/facilities`, commit `7320f28`, CI green on both jobs, 179 backend tests). **A-02 is Done** (`SystemConfigV1`, commit `74fe5e2`, CI green on both jobs, 435 backend tests). **A-03 is Done** (atomic workspace initialization service, commit `8cf9a6b`, CI green on both jobs, 462 backend tests). **A-04 is Done** (`GET /api/v1/session`, commit `b363dad`, CI green on both jobs, 519 backend tests). **A-05 is Done** (`GET /api/v1/configurations/current`, commit `d9427bf`, CI green on both jobs, 554 backend tests). **A-06 is Done** (`POST /api/v1/configurations/{id}/versions`, commit `d117df2`, CI green on both jobs, 663 backend tests). **A-07 is Done** (commit `b79d012`, CI run 39139803047 green on both jobs: 663 backend tests, 21 frontend tests). Next: the startup-delay simulator and `POST /api/v1/demo/startup-check` (approved scope).
 
 ## Implemented (verified in source)
 
@@ -16,7 +16,7 @@
 
 ## Not implemented
 
-applying the seed to Neon, deployment, general scenarios, persisted runs, PDF reports, 3D, Gemini. (Only the fixed startup-check scenario exists; it is stateless.) See [`09-known-limitations.md`](09-known-limitations.md).
+general scenarios, persisted runs, PDF reports, 3D, Gemini. (Only the fixed startup-check scenario exists; it is stateless.) See [`09-known-limitations.md`](09-known-limitations.md).
 
 ## Roadmap order (Phase A)
 
@@ -25,23 +25,23 @@ F-11 → A-01 → A-01b → A-02 → A-03 (atomic workspace initialization) → 
 ## Outstanding issues
 
 1. `/health` does not match the approved contract (task C-11).
-2. Neon PostgreSQL major version unconfirmed (test image is `postgres:17`).
+2. Neon PostgreSQL was reported as 18.6 in an earlier read-only inspection (owner-reported; not independently verified here). The local test image is `postgres:17`, so tests do not run on the production major version.
 3. `ck_configurations_name` still accepts tab/newline-only names at the database level; `ConfigurationName` (A-02) rejects them and A-03/A-06 must use it.
 4. Open decisions listed in [`08-decisions.md`](08-decisions.md#open-items-not-yet-decided).
 
 ## Risks
 
-- Test PostgreSQL major version may differ from Neon's.
-- Cookie forwarding through the Vercel rewrite to Render is unproven.
-- `/session` returns 503 on Neon until the facility seed is applied (separate approval).
-- Writes are rejected from every browser origin until `FRONTEND_ORIGINS` is configured on the backend host (not done; deployment action).
+- Test PostgreSQL major version (17) differs from the reported Neon version (18.6).
+- Cookie forwarding through the Vercel rewrite to Render was observed working end to end (session and a save), but is not covered by an automated test; Safari, Firefox and real touch devices are unverified.
+- `FRONTEND_ORIGINS`: saves from the deployed frontend were observed succeeding, so the backend accepts that origin. The expected value is `https://gridproof-seven.vercel.app`; the exact value set on Render is not independently verified.
+- Which commit is deployed, and whether a deploy is pending for later commits, is not verified.
 - The simulator is a single fixed, simplified, stateless scenario (`docs/09-known-limitations.md`, startup-check notes); it is not validated against real equipment.
 
 ## Next three recommended actions
 
-1. Deployment readiness (needs separate approval for each production action): confirm Neon's PostgreSQL major version, apply migrations and the facility seed to Neon, create Render and Vercel projects.
-2. Set `FRONTEND_ORIGINS` on the backend host and `API_PROXY_TARGET` on Vercel; prove the session cookie through the Vercel rewrite.
-3. Run a complete browser smoke test at the public URL and rehearse the recorded-demo fallback.
+1. Review the guided-challenge change (local, uncommitted). On approval: commit, then deploy separately and smoke-test the public URL, rehearsing the recorded-demo fallback.
+2. Verify the deployed Vercel commit and the Render `FRONTEND_ORIGINS` value, and record them here.
+3. Record the SHPE demo (G-06) from the deployed app. Post-conference: Daventry screening workbench (amendment approved, not built), Seymour engine test-plan exercise and vehicle application ideas (roadmap concepts only).
 
 ## Documents
 
@@ -53,3 +53,16 @@ F-11 → A-01 → A-01b → A-02 → A-03 (atomic workspace initialization) → 
 - **Startup check** (`POST /api/v1/demo/startup-check`, doc 05 API-16, decision D-23): commit `cd09696`, CI run 39141348897 green (1321 backend, 21 frontend tests).
 - **Comparison UI** (baseline v1 versus latest saved version, timeline, assumptions, playback driven by evidence frames, labeled recorded-demo fallback): **Done**: commit `e9bedf0`, CI run 39142514734 green on both jobs (1323 backend, 36 frontend tests).
 - **Frontend presentation polish and Industry Applications** (gallery of five application briefs in one native dialog, lab links for G1 and battery, compact tabbed lab layout, inspector illustrations): frontend only; no backend, API, migration or dependency change. Application briefs are informational context, not simulations.
+
+## Deployment observations (2026-10-19)
+
+Reported by the project owner; not re-verified by the assistant in this session.
+
+- The frontend is publicly accessible at https://gridproof-seven.vercel.app/.
+- Through the deployed frontend, the owner observed: saving G1 configuration version 2, the live startup simulation and the evidence comparison all working.
+- These observations imply the session cookie, the origin allowlist, migrations 001/002 and the facility seed work in production. The apply steps themselves are not recorded in these docs.
+- Not verified: the deployed commit SHA, the exact Render `FRONTEND_ORIGINS` value, Neon's version beyond the earlier owner-reported 18.6.
+
+## Guided challenges (H-01, H-02; 2026-10-19; not deployed)
+
+Status: verified locally (frontend 10 files, 99 tests; backend 1324 tests on Docker `postgres:17`); commit and CI result are recorded below once available. Frontend only, plus one backend regression test. No API, schema, seed or dependency change. Launched only from the Power generation and Battery storage briefs; a normal map-to-lab entry is unchanged. Details in [`06-development-log.md`](06-development-log.md) and [`07-testing-strategy.md`](07-testing-strategy.md); decisions D-24 to D-26 in [`08-decisions.md`](08-decisions.md).

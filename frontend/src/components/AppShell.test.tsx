@@ -164,12 +164,12 @@ describe("Industry Applications -> lab", () => {
   it.each([
     [
       "Power generation",
-      /Open Generator G1 in the Fridley lab/,
+      /Start the G1 startup challenge in the Fridley lab/,
       "Generator G1",
     ],
     [
       "Battery storage and switchgear",
-      /Open Battery Storage in the Fridley lab/,
+      /Start the battery continuity challenge in the Fridley lab/,
       "Battery Storage",
     ],
   ])(

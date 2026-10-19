@@ -100,19 +100,19 @@ describe("application brief dialog", () => {
     fireEvent.click(card("Power generation"));
     fireEvent.click(
       screen.getByRole("button", {
-        name: /Open Generator G1 in the Fridley lab/,
+        name: /Start the G1 startup challenge in the Fridley lab/,
       }),
     );
-    expect(onOpenLab).toHaveBeenLastCalledWith("g1");
+    expect(onOpenLab).toHaveBeenLastCalledWith("g1", "g1-startup");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     fireEvent.click(card("Battery storage and switchgear"));
     fireEvent.click(
       screen.getByRole("button", {
-        name: /Open Battery Storage in the Fridley lab/,
+        name: /Start the battery continuity challenge in the Fridley lab/,
       }),
     );
-    expect(onOpenLab).toHaveBeenLastCalledWith("battery");
+    expect(onOpenLab).toHaveBeenLastCalledWith("battery", "battery-continuity");
 
     fireEvent.click(card("Motors and electrical components"));
     expect(
@@ -121,7 +121,7 @@ describe("application brief dialog", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /Open the Fridley lab/ }),
     );
-    expect(onOpenLab).toHaveBeenLastCalledWith(null);
+    expect(onOpenLab).toHaveBeenLastCalledWith(null, undefined);
     expect(onOpenLab).toHaveBeenCalledTimes(3);
 
     for (const title of [

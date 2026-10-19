@@ -102,7 +102,7 @@ Routes are **navigation concepts**, not mandated implementation URLs other than 
 **Branches:**
 
 - **Fridley:** **Enter Virtual Lab** opens synthetic PIC-inspired workspace.
-- **Seymour / Daventry:** **View Facility Context** stays informational. No “live status,” control panel, or editable fake plant data.
+- **Seymour / Daventry:** **View Facility Context** stays informational. No “live status,” control panel, or editable fake plant data. *Amended 2026-10-19 (D-24):* a clearly labeled synthetic Daventry generator-package screening exercise is permitted once implemented and verified; Seymour is unchanged. Until then both remain informational.
 - **Map tiles unavailable:** Show accessible fallback list with exactly the same facility-selection/navigation capability. Map may be unavailable, but the product is navigable.
 
 **Acceptance criteria**
@@ -110,7 +110,7 @@ Routes are **navigation concepts**, not mandated implementation URLs other than 
 - **AC-UF01-01 [P0]:** Given a new session, when GridProof opens, then a geographic map is the default experience and the Fridley, Seymour and Daventry entries are available.
 - **AC-UF01-02 [P0]:** Given a facility marker, when activated by mouse, keyboard or supported touch, then its corresponding detail card opens and the selected location is distinguishable without color alone.
 - **AC-UF01-03 [P0]:** Given Fridley is selected, when **Enter Virtual Lab** is clicked, then Fridley's virtual lab opens without showing data for any other location.
-- **AC-UF01-04 [P0]:** Given Seymour or Daventry is selected, when its card opens, then only informational context is shown, without a functional lab launch.
+- **AC-UF01-04 [P0]:** Given Seymour or Daventry is selected, when its card opens, then only informational context is shown, without a functional lab launch. (Amendment D-24 permits a labeled synthetic Daventry exercise only after it is implemented and verified; it is not implemented today.)
 - **AC-UF01-05 [P0]:** Given any facility card, when viewed, then a user can distinguish real verified site context from synthetic operational examples, with independent-project disclosure.
 - **AC-UF01-06 [P1]:** Given unavailable external map tiles, when the map fails to render, then a facility list still allows selection and Fridley lab entry; failure is explained instead of a blank screen.
 
@@ -136,6 +136,17 @@ Routes are **navigation concepts**, not mandated implementation URLs other than 
 - **AC-UF02-04 [P1]:** Given a suitable licensed 3D model, when **Inspect 3D** is invoked, then the user can inspect that model without losing selection context.
 - **AC-UF02-05 [P1]:** Given unavailable WebGL or a failed model load, when inspection opens, then a bundled static asset and complete text details replace 3D without blocking configuration or testing.
 - **AC-UF02-06 [P0]:** Given any asset in the scene, when product context is shown, then it is clearly marked **representative/illustrative** rather than a verified real-installed piece of equipment.
+
+### UF-02a — Guided challenges from Industry Applications (conference slice, added 2026-10-19)
+
+Two optional challenges launch from the Power generation and Battery storage briefs into the Fridley lab and show a compact expandable panel above the Inspector/Results content. A normal map-to-lab entry shows no panel. Both use the visitor's real workspace, saved versions and the existing startup check (no new endpoint).
+
+- **AC-UFG-01 [P1]:** Given a challenge is launched, then no draft or saved version changes until the visitor clicks a preset (draft only) and later saves explicitly; unrelated unsaved edits survive.
+- **AC-UFG-02 [P1]:** Given the G1 challenge, then progress is derived from the draft, the latest saved version and fresh live evidence (configure above 10 s, save, run, inspect the failed readiness requirement, optional repair at 10 s or less); a saved version that already qualifies needs no new save, and no start from v1 or 5 s is assumed.
+- **AC-UFG-03 [P1]:** Given the battery challenge, then the visitor prepares and saves a load above the inverter limit, locks a prediction for that configuration version, and sees the explanation only after a live run that finished after the prediction.
+- **AC-UFG-04 [P1]:** Given recorded-demo playback, a result for another version or workspace, or evidence older than the prediction, then challenge progress does not advance.
+- **AC-UFG-05 [P1]:** Given any challenge text, then every number and pass/fail status shown comes from backend evidence, and the panel states the model's simplifications and that all values are synthetic.
+- **AC-UFG-06 [P1]:** Given keyboard or screen-reader use or a 390 px viewport, then the panel is operable, announces step changes politely, marks the current step with `aria-current="step"`, and causes no horizontal page scroll.
 
 ### UF-03 — Configure the virtual electrical system (P0)
 

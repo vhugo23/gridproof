@@ -201,6 +201,17 @@ flowchart TD
 
 **Exit gate G:** Public demo is reliable and safe, both CI jobs pass, and a stranger can reproduce the flagship flow from the README.
 
+### Phase H — Conference-demo additions (added 2026-10-19)
+
+| ID | Task | Depends on | Priority | Status | Estimate | Completion criterion |
+|---|---|---|---|---|---|---|
+| **H-01** | Guided G1 startup challenge from the Power generation brief | A-06, A-07, startup check | P1 | **Verified locally; CI pending** | 4–6 h | Progress derived from draft, saved version and fresh live evidence; presets draft-only; no auto-save; recorded, stale and failed results never advance. *Local: see 07-testing-strategy (Guided challenges).* |
+| **H-02** | Battery continuity predict-then-verify challenge | H-01 | P1 | **Verified locally; CI pending** | 4–6 h | Prediction tied to configuration id and version; reveal only after a later live run; numbers only from backend evidence. Backend regression: 400 kW, 15 s gives 0.625 kWh. |
+| **H-03** | Daventry amendment (D-24) and status reconciliation | none | P1 | **Docs done; CI pending** | 1–2 h | FR-03, AC-02, AC-UF01-04 amended; deployment observations recorded as owner-reported; unverified items labeled. |
+| **H-10** | Daventry synthetic generator-package screening workbench (backend-validated capacity check) | H-03, owner approval of API contract | P2 | **Planned (post-SHPE)** | 8–12 h | Deterministic, assumption-traceable check with independent tests; facility description and seed updated only after implementation and verification; no real product selection claims. |
+| **H-11** | Seymour engine test-plan exercise | H-03 amendment for Seymour | P2 | **Planned (post-SHPE)** | 6–10 h | No invented engine maps, efficiencies, torque curves, emissions or measurements; user-supplied numbers only. |
+| **H-12** | Mining and on-highway application challenges | H-10 | P3 | **Planned (post-SHPE)** | 6–10 h | Derived only from user entries; no vehicle simulator. |
+
 ## 5. Milestone review and delivery order
 
 | Milestone | Scope | Demo at milestone exit | Status |

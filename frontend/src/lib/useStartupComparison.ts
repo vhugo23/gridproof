@@ -11,6 +11,12 @@ export type ComparisonResult = {
   modified: StartupCheckEvidence;
   /** Live only: baseline and current are the same saved version (latest is v1). */
   sameVersion: boolean;
+  /**
+   * Counts completed live simulations. It advances only when a live run finishes
+   * and is applied; failed, superseded, cleared and recorded results never advance it.
+   * (A recorded result carries the current value unchanged.)
+   */
+  seq: number;
 };
 
 export type ComparisonError = {
@@ -77,6 +83,7 @@ export function useStartupComparison() {
   const [result, setResult] = useState<ComparisonResult | null>(null);
   const [error, setError] = useState<ComparisonError | null>(null);
   const runId = useRef(0);
+  const resultSeq = useRef(0);
 
   const run = useCallback(
     async (configurationId: string, latestVersion: number) => {
@@ -97,6 +104,7 @@ export function useStartupComparison() {
           baseline,
           modified: modified ?? baseline,
           sameVersion,
+          seq: ++resultSeq.current,
         });
         setStatus("done");
       } catch (e) {
@@ -116,6 +124,7 @@ export function useStartupComparison() {
       baseline: RECORDED_STARTUP_CHECK.baseline,
       modified: RECORDED_STARTUP_CHECK.modified,
       sameVersion: false,
+      seq: resultSeq.current,
     });
     setStatus("done");
   }, []);

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
+import type { ChallengeId } from "../challenges/deriveChallenge";
 import type { AssetId } from "../lab/assets";
 import ApplicationDialog from "./ApplicationDialog";
 import { APPLICATIONS } from "./applications";
@@ -9,7 +10,7 @@ import { APPLICATIONS } from "./applications";
 export default function IndustryGallery({
   onOpenLab,
 }: {
-  onOpenLab: (asset: AssetId | null) => void;
+  onOpenLab: (asset: AssetId | null, challenge?: ChallengeId) => void;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const opener = useRef<HTMLElement | null>(null);
@@ -75,9 +76,9 @@ export default function IndustryGallery({
       <ApplicationDialog
         application={application}
         onClose={close}
-        onOpenLab={(asset) => {
+        onOpenLab={(asset, challenge) => {
           setOpenId(null);
-          onOpenLab(asset);
+          onOpenLab(asset, challenge);
         }}
       />
     </section>
