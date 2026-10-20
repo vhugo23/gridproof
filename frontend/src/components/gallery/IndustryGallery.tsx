@@ -9,8 +9,10 @@ import { APPLICATIONS } from "./applications";
 
 export default function IndustryGallery({
   onOpenLab,
+  onOpenWorkbench,
 }: {
   onOpenLab: (asset: AssetId | null, challenge?: ChallengeId) => void;
+  onOpenWorkbench: (hash: string) => void;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const opener = useRef<HTMLElement | null>(null);
@@ -79,6 +81,10 @@ export default function IndustryGallery({
         onOpenLab={(asset, challenge) => {
           setOpenId(null);
           onOpenLab(asset, challenge);
+        }}
+        onOpenWorkbench={(hash) => {
+          setOpenId(null);
+          onOpenWorkbench(hash);
         }}
       />
     </section>

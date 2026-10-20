@@ -17,7 +17,7 @@ function card(title: string) {
 
 describe("IndustryGallery cards", () => {
   it("shows five application cards that are real buttons with described images", () => {
-    render(<IndustryGallery onOpenLab={() => {}} />);
+    render(<IndustryGallery onOpenLab={() => {}} onOpenWorkbench={() => {}} />);
     const region = screen.getByRole("region", {
       name: "Industry Applications",
     });
@@ -32,7 +32,7 @@ describe("IndustryGallery cards", () => {
   });
 
   it("discloses that the artwork is illustrative and not product imagery", () => {
-    render(<IndustryGallery onOpenLab={() => {}} />);
+    render(<IndustryGallery onOpenLab={() => {}} onOpenWorkbench={() => {}} />);
     expect(
       screen.getByText(/Illustrative artwork created for GridProof/),
     ).toBeInTheDocument();
@@ -46,7 +46,9 @@ describe("application brief dialog", () => {
   it.each(APPLICATIONS.map((a) => [a.title, a] as const))(
     "opens the %s brief with summary and 2-4 considerations",
     (title, app) => {
-      render(<IndustryGallery onOpenLab={() => {}} />);
+      render(
+        <IndustryGallery onOpenLab={() => {}} onOpenWorkbench={() => {}} />,
+      );
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       fireEvent.click(card(title));
       const dialog = screen.getByRole("dialog", { name: title });
@@ -61,7 +63,7 @@ describe("application brief dialog", () => {
   );
 
   it("closes with the close button and returns focus to the card", () => {
-    render(<IndustryGallery onOpenLab={() => {}} />);
+    render(<IndustryGallery onOpenLab={() => {}} onOpenWorkbench={() => {}} />);
     const power = card("Power generation");
     power.focus();
     fireEvent.click(power);
@@ -73,7 +75,7 @@ describe("application brief dialog", () => {
   });
 
   it("closes when the dialog fires its cancel/close path (Escape)", () => {
-    render(<IndustryGallery onOpenLab={() => {}} />);
+    render(<IndustryGallery onOpenLab={() => {}} onOpenWorkbench={() => {}} />);
     const mining = card("Mining and off-highway");
     mining.focus();
     fireEvent.click(mining);
@@ -85,7 +87,7 @@ describe("application brief dialog", () => {
   });
 
   it("closes on a backdrop click but not on a click inside the panel", () => {
-    render(<IndustryGallery onOpenLab={() => {}} />);
+    render(<IndustryGallery onOpenLab={() => {}} onOpenWorkbench={() => {}} />);
     fireEvent.click(card("Power generation"));
     fireEvent.click(screen.getByRole("heading", { name: "Power generation" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -95,7 +97,13 @@ describe("application brief dialog", () => {
 
   it("connects only the lab-related briefs to existing functionality", () => {
     const onOpenLab = vi.fn();
-    render(<IndustryGallery onOpenLab={onOpenLab} />);
+    const onOpenWorkbench = vi.fn();
+    render(
+      <IndustryGallery
+        onOpenLab={onOpenLab}
+        onOpenWorkbench={onOpenWorkbench}
+      />,
+    );
 
     fireEvent.click(card("Power generation"));
     fireEvent.click(
@@ -124,21 +132,46 @@ describe("application brief dialog", () => {
     expect(onOpenLab).toHaveBeenLastCalledWith(null, undefined);
     expect(onOpenLab).toHaveBeenCalledTimes(3);
 
-    for (const title of [
-      "Mining and off-highway",
-      "On-highway trucks and mobile power",
-    ]) {
-      fireEvent.click(card(title));
-      const dialog = screen.getByRole("dialog");
-      expect(
-        within(dialog).getByText(/Informational brief only/),
-      ).toBeInTheDocument();
-      expect(within(dialog).queryByRole("button", { name: /lab/i })).toBeNull();
-      fireEvent.click(
-        screen.getByRole("button", { name: "Close application brief" }),
-      );
-    }
+    // Only the on-highway brief remains informational.
+    fireEvent.click(card("On-highway trucks and mobile power"));
+    const dialog = screen.getByRole("dialog");
+    expect(
+      within(dialog).getByText(/Informational brief only/),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /lab/i })).toBeNull();
+    expect(
+      within(dialog).queryByRole("button", { name: /Analyzer/ }),
+    ).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Close application brief" }),
+    );
     expect(onOpenLab).toHaveBeenCalledTimes(3);
+    expect(onOpenWorkbench).not.toHaveBeenCalled();
+  });
+
+  it("launches the Mining duty-cycle analyzer from its brief by hash, not the lab", () => {
+    const onOpenLab = vi.fn();
+    const onOpenWorkbench = vi.fn();
+    render(
+      <IndustryGallery
+        onOpenLab={onOpenLab}
+        onOpenWorkbench={onOpenWorkbench}
+      />,
+    );
+    fireEvent.click(card("Mining and off-highway"));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByText(/Informational brief only/)).toBeNull();
+    expect(
+      within(dialog).getByText(/does not model fuel use, range or propulsion/),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: /Open the Duty-Cycle Energy Analyzer/,
+      }),
+    );
+    expect(onOpenWorkbench).toHaveBeenCalledWith("#mining-duty-cycle");
+    expect(onOpenLab).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("makes no capability claims beyond what exists", () => {

@@ -10,12 +10,14 @@ type Props = {
   application: Application | null;
   onClose: () => void;
   onOpenLab: (asset: AssetId | null, challenge?: ChallengeId) => void;
+  onOpenWorkbench: (hash: string) => void;
 };
 
 export default function ApplicationDialog({
   application,
   onClose,
   onOpenLab,
+  onOpenWorkbench,
 }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -38,6 +40,7 @@ export default function ApplicationDialog({
   }, [application]);
 
   const action = application?.action;
+  const workbench = application?.workbench;
 
   return (
     <dialog
@@ -111,6 +114,19 @@ export default function ApplicationDialog({
                   </button>
                   <p className="mt-2 text-[11px] leading-snug text-gp-faint">
                     {action.note}
+                  </p>
+                </>
+              ) : workbench ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onOpenWorkbench(workbench.hash)}
+                    className="w-full rounded-md bg-gp-red px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-gp-red/20 transition hover:brightness-110"
+                  >
+                    {workbench.label} →
+                  </button>
+                  <p className="mt-2 text-[11px] leading-snug text-gp-faint">
+                    {workbench.note}
                   </p>
                 </>
               ) : (

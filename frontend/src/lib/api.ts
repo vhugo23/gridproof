@@ -2,6 +2,8 @@ import type {
   CapacityCheckEvidence,
   CapacityCheckRequest,
   CurrentConfiguration,
+  DutyCycleEvidence,
+  DutyCycleRequest,
   ErrorDetail,
   FacilitiesResponse,
   SavedVersion,
@@ -197,6 +199,20 @@ export function runCapacityCheck(
   payload: CapacityCheckRequest,
 ): Promise<CapacityCheckEvidence> {
   return request<CapacityCheckEvidence>("/demo/capacity-check", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Stateless and session-free (API-18): the server validates the user's
+ * duty-cycle segments and returns the deterministic energy analysis.
+ */
+export function runDutyCycle(
+  payload: DutyCycleRequest,
+): Promise<DutyCycleEvidence> {
+  return request<DutyCycleEvidence>("/demo/duty-cycle", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

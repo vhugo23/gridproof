@@ -215,3 +215,44 @@ export type CapacityCheckEvidence = {
   assumptions: Array<{ id: string; text: string }>;
   packages: CapacityPackage[];
 };
+
+// Mining duty-cycle analyzer (docs/05-api-contracts.md API-18). Rendered as returned;
+// the frontend never recomputes energy, shares, totals or the dominant segment.
+
+export type DutyCycleSegmentInput = {
+  name: string;
+  power_kw: number;
+  duration_min: number;
+};
+
+export type DutyCycleRequest = {
+  segments: DutyCycleSegmentInput[];
+  cycles_per_shift: number;
+};
+
+export type DutyCycleSegment = {
+  id: string;
+  name: string;
+  power_kw: number;
+  duration_min: number;
+  energy_kwh: number;
+  share_of_cycle_energy_pct: number;
+  is_dominant: boolean;
+};
+
+export type DutyCycleEvidence = {
+  model_version: string;
+  inputs: DutyCycleRequest;
+  segments: DutyCycleSegment[];
+  cycle: {
+    duration_min: number;
+    energy_kwh: number;
+    average_power_kw: number;
+    peak_power_kw: number;
+  };
+  shift: { cycles: number; duration_min: number; energy_kwh: number };
+  /** Empty when the cycle uses no energy; several ids when energies tie exactly. */
+  dominant_segment_ids: string[];
+  explanation: string;
+  assumptions: Array<{ id: string; text: string }>;
+};
