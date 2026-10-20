@@ -8,6 +8,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CAPACITY_CASE_1,
+  DUTY_CYCLE_SAMPLE,
   apiError,
   current,
   facilities,
@@ -210,6 +211,73 @@ describe("Industry Applications -> lab", () => {
       screen.getByRole("button", { name: /Open the Fridley lab/ }),
     );
     expect(await screen.findByText("Select equipment")).toBeInTheDocument();
+  });
+});
+
+describe("Industry Applications -> Mining duty-cycle analyzer", () => {
+  function stubMiningApi() {
+    const fn = vi.fn((url: string) => {
+      if (url.endsWith("/facilities"))
+        return Promise.resolve(json(200, { catalog_version: 1, facilities }));
+      if (url.endsWith("/demo/duty-cycle"))
+        return Promise.resolve(json(200, DUTY_CYCLE_SAMPLE));
+      return Promise.resolve(apiError(404, "NOT_FOUND"));
+    });
+    vi.stubGlobal("fetch", fn);
+    return fn;
+  }
+  const urls = (fn: ReturnType<typeof stubMiningApi>) =>
+    fn.mock.calls.map(([u]) => String(u));
+
+  it("opens from the Mining brief by hash, analyzes without any session call and returns to the map", async () => {
+    const fn = stubMiningApi();
+    render(<AppShell />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Mining and off-highway/ }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Open the Duty-Cycle Energy Analyzer/,
+      }),
+    );
+    expect(
+      await screen.findByRole("heading", {
+        name: "Mining Duty-Cycle Energy Analyzer",
+      }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe("#mining-duty-cycle");
+
+    fireEvent.click(screen.getByRole("button", { name: "Analyze duty cycle" }));
+    expect(await screen.findByTestId("cycle-summary")).toBeInTheDocument();
+    expect(urls(fn)).toContain("/api/v1/demo/duty-cycle");
+    expect(urls(fn).some((u) => /session|configurations/.test(u))).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: /← Map/ }));
+    await waitFor(() => expect(window.location.hash).toBe(""));
+    expect(
+      await screen.findByRole("heading", { name: "Explore Power Integration" }),
+    ).toBeInTheDocument();
+    expect(urls(fn).some((u) => /session|configurations/.test(u))).toBe(false);
+  });
+
+  it("opens directly from its address and is not a map facility", async () => {
+    window.location.hash = "#mining-duty-cycle";
+    const fn = stubMiningApi();
+    render(<AppShell />);
+    expect(
+      await screen.findByRole("heading", {
+        name: "Mining Duty-Cycle Energy Analyzer",
+      }),
+    ).toBeInTheDocument();
+    expect(urls(fn).some((u) => /session|configurations/.test(u))).toBe(false);
+    window.location.hash = "";
+    await screen.findByRole("heading", { name: "Explore Power Integration" });
+    expect(
+      screen.queryByRole("button", { name: /Mining.*facility/i }),
+    ).toBeNull();
+    expect(facilities.map((f) => f.id)).toEqual(
+      expect.not.arrayContaining(["mining"]),
+    );
   });
 });
 

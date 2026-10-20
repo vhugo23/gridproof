@@ -10,6 +10,7 @@ from app.routes.configurations import router as configurations_router
 from app.routes.daventry import router as daventry_router
 from app.routes.demo import router as demo_router
 from app.routes.facilities import router as facilities_router
+from app.routes.mining import router as mining_router
 from app.routes.session import router as session_router
 
 app = FastAPI(
@@ -22,6 +23,7 @@ app.include_router(configurations_router)
 app.include_router(daventry_router)
 app.include_router(demo_router)
 app.include_router(facilities_router)
+app.include_router(mining_router)
 app.include_router(session_router)
 
 

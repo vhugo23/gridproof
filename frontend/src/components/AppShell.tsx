@@ -7,7 +7,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { experienceFor, DAVENTRY_HASH } from "@/lib/experiences";
+import { experienceFor, DAVENTRY_HASH, MINING_HASH } from "@/lib/experiences";
 import { useFacilities } from "@/lib/useFacilities";
 import { useWorkspaceConfig } from "@/lib/useWorkspaceConfig";
 import { usePlayback } from "@/lib/usePlayback";
@@ -17,6 +17,7 @@ import FacilityMap from "./map/FacilityMap";
 import FacilityCard from "./map/FacilityCard";
 import IndustryGallery from "./gallery/IndustryGallery";
 import Workbench from "./daventry/Workbench";
+import DutyCycleWorkbench from "./mining/DutyCycleWorkbench";
 import LabScene from "./lab/LabScene";
 import type { AssetId } from "./lab/assets";
 import ChallengePanel from "./challenges/ChallengePanel";
@@ -90,6 +91,7 @@ export default function AppShell() {
   const hash = useSyncExternalStore(subscribeHash, getHash, getServerHash);
   const inLab = hash === LAB_HASH;
   const inWorkbench = hash === DAVENTRY_HASH;
+  const inMining = hash === MINING_HASH;
   const [enteringId, setEnteringId] = useState<string | null>(null);
   const [activeFacilityId, setActiveFacilityId] = useState("fridley");
   const [selected, setSelected] = useState<AssetId | null>(null);
@@ -159,6 +161,11 @@ export default function AppShell() {
     if (experience) window.location.hash = experience.hash;
   };
 
+  // Application-brief exercises open by hash too, with no session or workspace.
+  const openWorkbench = (hash: string) => {
+    window.location.hash = hash;
+  };
+
   const leaveLab = () => {
     setChallenge(null);
     window.location.hash = "";
@@ -176,6 +183,18 @@ export default function AppShell() {
       : (inLab ? ws.phase === "ready" : facilities !== null)
         ? "connected"
         : "checking";
+
+  if (inMining) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header right={<ApiChip state={apiState} />} />
+        <main className="flex-1 px-5 py-3">
+          <DutyCycleWorkbench onBack={leaveLab} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (inWorkbench) {
     return (
@@ -252,7 +271,10 @@ export default function AppShell() {
               <div className="aspect-[1000/423] animate-pulse rounded-xl border border-gp-line bg-gp-surface" />
             )}
             {facilities && facility && (
-              <IndustryGallery onOpenLab={openLabFrom} />
+              <IndustryGallery
+                onOpenLab={openLabFrom}
+                onOpenWorkbench={openWorkbench}
+              />
             )}
           </div>
         </main>

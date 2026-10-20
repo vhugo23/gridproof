@@ -81,6 +81,16 @@
 - **No rate limit** beyond the 4 KiB body cap; the endpoint is a few multiplications and needs no database.
 - **Shared helpers:** `routes/daventry.py` imports private helpers from `routes/demo.py` rather than moving them; a later refactor could extract them.
 
+## Mining duty-cycle analyzer notes (2026-10-20)
+
+- The analyzer calculates energy from the segments a user types. It is not validated against any real machine and uses no equipment data; the sample values (Loading, Hauling, Dumping, Returning) are invented. It does not model fuel use, vehicle range, propulsion or drivetrain, efficiency or losses, auxiliary loads, emissions, regeneration (power cannot be negative) or battery or generator sizing.
+- One cycle is a fixed sequence of constant-power segments repeated exactly `cycles_per_shift` times; there is no variation between cycles and no idle time unless entered as a segment. The modeled shift is capped at 1,440 minutes, and limits (12 segments, 10,000 kW, 480 minutes per segment, 500 cycles) are arbitrary exercise bounds, not engineering limits.
+- Displayed shares are rounded to 2 decimals and can add up to slightly more or less than 100%. Dominance uses exact values, so segments that tie exactly are all reported.
+- Cross-field errors (duplicate names, shift limit) appear only after every single field is valid, so a form with several problems may need more than one run to show them all.
+- Results are not saved and there is no export; refreshing the page returns to the sample values.
+- `useCapacityCheck` and `useStatelessCheck` duplicate the same small error-mapping logic; the Daventry hook was left untouched on purpose.
+- Deployment: until the Render backend exposes API-18, the Mining button opens an analyzer that answers "Request failed (404)". Render did not auto-deploy API-17 promptly.
+
 ## Configuration schema notes (A-02)
 
 - Docs 01, 02 and 03 mention an adjustable load bank, but `SystemConfigV1` has no load-bank field by design: `equipment.load.critical_kw` is the baseline load, `set_load_kw` scenario events change demand during a simulation, and the load-bank visualization shows that simulated demand (decision D-18; doc 05 v1.2).

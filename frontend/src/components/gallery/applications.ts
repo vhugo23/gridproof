@@ -1,5 +1,6 @@
 import type { ChallengeId } from "../challenges/deriveChallenge";
 import type { AssetId } from "../lab/assets";
+import { MINING_HASH } from "@/lib/experiences";
 
 export type ApplicationAction = {
   label: string;
@@ -8,6 +9,13 @@ export type ApplicationAction = {
   /** Guided challenge shown above the inspector, if any. */
   challenge?: ChallengeId;
   /** Honest note about what the lab does and does not model. */
+  note: string;
+};
+
+export type ApplicationWorkbench = {
+  label: string;
+  /** Hash route of a synthetic, stateless exercise (no lab, session or workspace). */
+  hash: string;
   note: string;
 };
 
@@ -21,6 +29,7 @@ export type Application = {
   /** Educational, qualitative points; general engineering context, not GridProof results. */
   considerations: string[];
   action?: ApplicationAction;
+  workbench?: ApplicationWorkbench;
 };
 
 export const APPLICATIONS: Application[] = [
@@ -100,6 +109,11 @@ export const APPLICATIONS: Application[] = [
       "Serviceability: remote sites make uptime and ease of repair as important as peak performance.",
       "Energy logistics: delivering fuel or other energy to a remote site is a design constraint in its own right.",
     ],
+    workbench: {
+      label: "Open the Duty-Cycle Energy Analyzer",
+      hash: MINING_HASH,
+      note: "An independent GridProof exercise: enter your own power and duration segments and the server calculates energy per segment, per cycle and per shift. Nothing is saved and no equipment data is used. It does not model fuel use, range or propulsion.",
+    },
   },
   {
     id: "on-highway-mobile",
