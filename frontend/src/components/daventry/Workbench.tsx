@@ -2,12 +2,17 @@
 
 import Image from "next/image";
 import { useId, useState, type FormEvent } from "react";
-import type {
-  CapacityCheckRequest,
-  CapacityPackage,
-  CapacityRequirement,
-} from "@/lib/types";
+import type { CapacityCheckRequest } from "@/lib/types";
 import { useCapacityCheck } from "@/lib/useCapacityCheck";
+import {
+  FocusPanel,
+  LineupHighlight,
+  PackageCard,
+  ScaleLegend,
+  ScreeningSummary,
+  fixed,
+  scaleFor,
+} from "./PackageViews";
 
 type Fields = { kw: string; pf: string; margin: string };
 type FieldKey = "real_power_kw" | "power_factor" | "capacity_margin_pct";
@@ -18,22 +23,12 @@ const FIELD_OF: Record<FieldKey, keyof Fields> = {
   capacity_margin_pct: "margin",
 };
 
-const REQUIREMENT_LABEL: Record<CapacityRequirement["requirement_id"], string> =
-  {
-    KW_CAPACITY: "Real power (kW)",
-    KVA_CAPACITY: "Apparent power (kVA)",
-  };
-
 function parseNumber(text: string): number | null {
   const trimmed = text.trim();
   if (trimmed === "") return null;
   const value = Number(trimmed);
   return Number.isFinite(value) ? value : null;
 }
-
-// Display formatting only: every value comes from the backend response.
-const fixed = (n: number) => n.toFixed(2);
-const signed = (n: number) => `${n >= 0 ? "+" : "−"}${Math.abs(n).toFixed(2)}`;
 
 function Field({
   label,
@@ -83,88 +78,6 @@ function Field({
   );
 }
 
-function Verdict({ status }: { status: "pass" | "fail" }) {
-  const pass = status === "pass";
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-bold tracking-wider ${
-        pass
-          ? "bg-gp-ok/15 text-gp-ok ring-1 ring-gp-ok/40"
-          : "bg-gp-error/15 text-gp-error ring-1 ring-gp-error/40"
-      }`}
-    >
-      <span aria-hidden>{pass ? "✓" : "✕"}</span>
-      {pass ? "PASS" : "FAIL"}
-    </span>
-  );
-}
-
-function RequirementRow({ r }: { r: CapacityRequirement }) {
-  return (
-    <div
-      data-requirement={r.requirement_id}
-      data-status={r.status}
-      className="border-t border-gp-line py-2.5 first:border-t-0"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <h4 className="text-sm font-medium text-gp-text">
-          {REQUIREMENT_LABEL[r.requirement_id]}
-        </h4>
-        <Verdict status={r.status} />
-      </div>
-      <dl className="mt-1.5 grid grid-cols-3 gap-2 text-xs">
-        <div>
-          <dt className="text-gp-faint">Required</dt>
-          <dd className="font-mono text-gp-text">
-            {fixed(r.required)} {r.unit}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-gp-faint">Package rating</dt>
-          <dd className="font-mono text-gp-text">
-            {r.capacity} {r.unit}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-gp-faint">Margin</dt>
-          <dd className="font-mono text-gp-text">
-            {signed(r.margin)} {r.unit}
-            <span className="block text-[11px] text-gp-muted">
-              {signed(r.margin_pct_of_required)}% of required
-            </span>
-          </dd>
-        </div>
-      </dl>
-      <p className="mt-1.5 text-xs leading-snug text-gp-muted">
-        {r.explanation}
-      </p>
-    </div>
-  );
-}
-
-function PackageCard({ pkg }: { pkg: CapacityPackage }) {
-  const titleId = useId();
-  return (
-    <article
-      aria-labelledby={titleId}
-      className="rounded-lg border border-gp-line bg-gp-surface p-3"
-    >
-      <h3 id={titleId} className="text-sm font-semibold text-gp-text">
-        {pkg.label}
-      </h3>
-      <p className="text-[11px] text-gp-faint">
-        {pkg.rated_kw} kW · {pkg.rated_kva} kVA · rated at{" "}
-        {pkg.rated_power_factor} pf · synthetic
-      </p>
-      <div className="mt-1.5">
-        {pkg.requirements.map((r) => (
-          <RequirementRow key={r.requirement_id} r={r} />
-        ))}
-      </div>
-    </article>
-  );
-}
-
 export default function Workbench({ onBack }: { onBack: () => void }) {
   const [fields, setFields] = useState<Fields>({
     kw: "400",
@@ -175,7 +88,9 @@ export default function Workbench({ onBack }: { onBack: () => void }) {
   const [localErrors, setLocalErrors] = useState<
     Partial<Record<FieldKey, string>>
   >({});
+  const [inspectedId, setInspectedId] = useState<string | null>(null);
   const { status, result, error, run } = useCapacityCheck();
+  const inspected = result?.packages.find((p) => p.id === inspectedId) ?? null;
 
   const stale =
     result !== null &&
@@ -218,6 +133,7 @@ export default function Workbench({ onBack }: { onBack: () => void }) {
   };
 
   const running = status === "running";
+  const scale = scaleFor(result?.packages ?? []);
 
   return (
     <div className="gp-lab-in mx-auto max-w-[1280px]">
@@ -244,7 +160,7 @@ export default function Workbench({ onBack }: { onBack: () => void }) {
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-xl border border-gp-line bg-gp-surface">
+          <div className="relative overflow-hidden rounded-xl border border-gp-line bg-gp-surface">
             <Image
               src="/illustrations/daventry-package-lineup.svg"
               alt="Illustration of four synthetic enclosed generator sets, packages A to D, in increasing size. Invented for GridProof; not Cummins products."
@@ -253,6 +169,7 @@ export default function Workbench({ onBack }: { onBack: () => void }) {
               unoptimized
               className="h-auto w-full"
             />
+            {inspected && <LineupHighlight packageId={inspected.id} />}
           </div>
 
           <form
@@ -394,9 +311,20 @@ export default function Workbench({ onBack }: { onBack: () => void }) {
                 </dl>
               </div>
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <ScreeningSummary packages={result.packages} />
+              {inspected && <FocusPanel pkg={inspected} />}
+              <ScaleLegend scale={scale} />
+              <div className="mt-2 grid gap-3 sm:grid-cols-2">
                 {result.packages.map((pkg) => (
-                  <PackageCard key={pkg.id} pkg={pkg} />
+                  <PackageCard
+                    key={pkg.id}
+                    pkg={pkg}
+                    scale={scale}
+                    inspected={pkg.id === inspected?.id}
+                    onInspect={() =>
+                      setInspectedId((cur) => (cur === pkg.id ? null : pkg.id))
+                    }
+                  />
                 ))}
               </div>
 

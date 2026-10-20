@@ -104,9 +104,13 @@ describe("Daventry workbench", () => {
     expect(within(c).getByText("PASS")).toBeVisible();
     expect(within(c).getByText("+80.00 kW")).toBeVisible();
     expect(within(c).getByText("+20.00% of required")).toBeVisible();
-    expect(
-      within(c).getByText(/Backend explanation: required 400.00 kW/),
-    ).toBeVisible();
+    // Server explanations sit in a collapsed disclosure, still in the DOM.
+    const explanation = within(pkg("C")).getByText(
+      /Backend explanation: required 400.00 kW/,
+    );
+    expect(explanation).not.toBeVisible();
+    fireEvent.click(within(pkg("C")).getByText("Server explanations"));
+    expect(explanation).toBeVisible();
     const a = req(pkg("A"), "KVA_CAPACITY");
     expect(within(a).getByText("FAIL")).toBeVisible();
     expect(within(a).getByText("−250.00 kVA")).toBeVisible();
@@ -153,6 +157,81 @@ describe("Daventry workbench", () => {
     expect(row).toHaveAttribute("data-status", "pass");
     expect(within(row).getByText("PASS")).toBeVisible();
     expect(within(row).getByText("999.00 kW")).toBeVisible();
+  });
+
+  it("summarises how many packages pass both requirements, from the separate verdicts", async () => {
+    stubApi(json(200, CAPACITY_CASE_2));
+    render(<Workbench onBack={() => {}} />);
+    run();
+    const summary = await screen.findByTestId("screening-summary");
+    // Hand count of CAPACITY_CASE_2: C and D pass both; B, C, D pass kW; C, D pass kVA.
+    expect(summary).toHaveTextContent("2 of 4");
+    expect(summary).toHaveTextContent("kW requirement: 3 of 4 pass");
+    expect(summary).toHaveTextContent("kVA requirement: 2 of 4 pass");
+    expect(summary).not.toHaveTextContent(/recommend|best|rank/i);
+  });
+
+  it("draws kW and kVA bars on one shared scale per unit without altering verdicts", async () => {
+    stubApi(json(200, CAPACITY_CASE_1));
+    render(<Workbench onBack={() => {}} />);
+    run();
+    await screen.findByTestId("screening-summary");
+    const widthOf = (letter: string, id: "KW_CAPACITY" | "KVA_CAPACITY") =>
+      (req(pkg(letter), id).querySelector('[data-bar="rated"]') as HTMLElement)
+        .style.width;
+    const markerOf = (letter: string, id: "KW_CAPACITY" | "KVA_CAPACITY") =>
+      (
+        req(pkg(letter), id).querySelector(
+          '[data-bar="required"]',
+        ) as HTMLElement
+      ).style.left;
+    // kW: required 400, ratings 200/320/480/640 -> shared scale 0..640.
+    expect(widthOf("A", "KW_CAPACITY")).toBe(`${(200 / 640) * 100}%`);
+    expect(markerOf("A", "KW_CAPACITY")).toBe(`${(400 / 640) * 100}%`);
+    expect(markerOf("D", "KW_CAPACITY")).toBe(markerOf("A", "KW_CAPACITY"));
+    expect(widthOf("D", "KW_CAPACITY")).toBe("100%");
+    expect(
+      screen.getByText(/All kW bars share one scale \(0 to 640.00 kW\)/),
+    ).toBeVisible();
+    // Exact values and margins remain printed as text.
+    expect(
+      within(req(pkg("C"), "KW_CAPACITY")).getByText("+80.00 kW"),
+    ).toBeVisible();
+    expect(req(pkg("A"), "KW_CAPACITY")).toHaveAttribute("data-status", "fail");
+  });
+
+  it("lets a package be inspected and cleared with the keyboard-operable toggle", async () => {
+    stubApi(json(200, CAPACITY_CASE_1));
+    render(<Workbench onBack={() => {}} />);
+    run();
+    await screen.findByTestId("screening-summary");
+    expect(screen.queryByTestId("lineup-highlight")).toBeNull();
+    expect(screen.queryByTestId("package-focus")).toBeNull();
+
+    const toggle = screen.getByRole("button", {
+      name: "Inspect Synthetic Package C",
+    });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("lineup-highlight")).toBeInTheDocument();
+    const focus = screen.getByRole("region", {
+      name: "Details for Synthetic Package C",
+    });
+    expect(
+      within(focus).getByText(/Backend explanation: required 400.00 kW/),
+    ).toBeVisible();
+
+    // Selecting another package moves the focus; selecting it again clears it.
+    fireEvent.click(
+      screen.getByRole("button", { name: "Inspect Synthetic Package A" }),
+    );
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Inspect Synthetic Package A" }),
+    );
+    expect(screen.queryByTestId("package-focus")).toBeNull();
+    expect(screen.queryByTestId("lineup-highlight")).toBeNull();
   });
 
   it("omits a blank optional margin from the request", async () => {
