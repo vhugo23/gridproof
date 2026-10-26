@@ -314,6 +314,60 @@ describe("Daventry workbench", () => {
     expect(screen.getByText(/inputs changed after this result/)).toBeVisible();
   });
 
+  it("keeps an older result flagged as outdated after a failed re-run", async () => {
+    stubApi(
+      json(200, CAPACITY_CASE_1),
+      apiError(422, "VALIDATION_ERROR", [
+        { field: "power_factor", reason: "Must be between 0.50 and 1.00" },
+      ]),
+    );
+    render(<Workbench onBack={() => {}} />);
+    run();
+    await screen.findByTestId("demand-summary");
+    fireEvent.change(input("Power factor"), { target: { value: "0.3" } });
+    run();
+    expect(
+      await screen.findByText("Must be between 0.50 and 1.00"),
+    ).toBeVisible();
+    // The 400 kW at 0.8 pf result is still shown, and still says it is old.
+    expect(screen.getByTestId("demand-summary")).toBeInTheDocument();
+    expect(screen.getByText(/inputs changed after this result/)).toBeVisible();
+  });
+
+  it("ties the outdated notice to the inputs that produced the result, not the latest attempt", async () => {
+    stubApi(json(200, CAPACITY_CASE_1), apiError(503, "DATABASE_UNAVAILABLE"));
+    render(<Workbench onBack={() => {}} />);
+    run();
+    await screen.findByTestId("demand-summary");
+    fireEvent.change(input("Real power demand"), { target: { value: "500" } });
+    run();
+    await screen.findByText(/The GridProof API is unavailable/);
+    expect(screen.getByText(/inputs changed after this result/)).toBeVisible();
+    // Typing the original value back makes the old result current again.
+    fireEvent.change(input("Real power demand"), { target: { value: "400" } });
+    expect(screen.queryByText(/inputs changed after this result/)).toBeNull();
+  });
+
+  it("clears the outdated notice when a re-run succeeds for the new inputs", async () => {
+    stubApi(json(200, CAPACITY_CASE_1), json(200, CAPACITY_CASE_2));
+    render(<Workbench onBack={() => {}} />);
+    run();
+    await screen.findByTestId("demand-summary");
+    fireEvent.change(input("Real power demand"), { target: { value: "300" } });
+    fireEvent.change(input("Power factor"), { target: { value: "0.70" } });
+    expect(screen.getByText(/inputs changed after this result/)).toBeVisible();
+    run();
+    await waitFor(() =>
+      expect(
+        within(screen.getByTestId("demand-summary")).getAllByText("428.57 kVA"),
+      ).toHaveLength(2),
+    );
+    expect(screen.queryByText(/inputs changed after this result/)).toBeNull();
+    // Editing again flags the new result, against the new inputs.
+    fireEvent.change(input("Real power demand"), { target: { value: "301" } });
+    expect(screen.getByText(/inputs changed after this result/)).toBeVisible();
+  });
+
   it("announces completion politely and never touches the session or configuration APIs", async () => {
     const fn = stubApi(json(200, CAPACITY_CASE_1));
     render(<Workbench onBack={() => {}} />);

@@ -213,7 +213,7 @@ If the schedule becomes constrained, P0 correctness takes precedence over asset 
 - Electrical transient, electromagnetic, protection-coordination, harmonic, synchronization or full AC power-flow studies.
 - Safety certification, regulatory compliance determination, production-grade commissioning approval, or warranty recommendations.
 - Full recreation of proprietary Cummins PowerCommand controls, PIC testing tools, or internal workflows.
-- Additional fully simulated Cummins locations, mining/trucking/manufacturing modules, or a global asset telemetry network.
+- Additional fully simulated Cummins locations, mining/trucking/manufacturing modules, or a global asset telemetry network. *Amended 2026-10-20 (D-28):* the Mining and off-highway application brief may open one clearly labeled, independent, synthetic duty-cycle energy calculator that works only on user-entered numbers; it is not a simulated facility or module and implies no real operations, fuel, range or propulsion modeling.
 - Unrestricted AI agents, autonomous control changes, frequent paid model calls, or AI-dependent simulation decisions.
 - Complex role-based enterprise authorization, real ERP/CMMS integrations, or multi-tenant customer provisioning.
 - Photorealistic custom-engineered 3D models requiring proprietary CAD data; free-roam 3D campus rendering or CAD-level geometry.

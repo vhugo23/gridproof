@@ -2,6 +2,7 @@ import type {
   CapacityCheckEvidence,
   CapacityRequirement,
   CurrentConfiguration,
+  DutyCycleEvidence,
   Facility,
   StartupCheckEvidence,
   SystemConfigV1,
@@ -366,3 +367,61 @@ export const CAPACITY_CASE_2: CapacityCheckEvidence = {
     ),
   ],
 };
+
+/**
+ * Hand-calculated (matches the backend test): Loading 120 kW x 3 min = 6 kWh,
+ * Hauling 300 x 12 = 60 kWh, Dumping 90 x 2 = 3 kWh, Returning 60 x 8 = 8 kWh.
+ * 77 kWh in 25 min, 18 cycles = 1386 kWh in 450 min, 77 x 60 / 25 = 184.8 kW.
+ */
+export const DUTY_CYCLE_SAMPLE: DutyCycleEvidence = {
+  model_version: "duty-cycle-v1",
+  inputs: {
+    segments: [
+      { name: "Loading", power_kw: 120, duration_min: 3 },
+      { name: "Hauling", power_kw: 300, duration_min: 12 },
+      { name: "Dumping", power_kw: 90, duration_min: 2 },
+      { name: "Returning", power_kw: 60, duration_min: 8 },
+    ],
+    cycles_per_shift: 18,
+  },
+  segments: [
+    segment(1, "Loading", 120, 3, 6, 7.79, false),
+    segment(2, "Hauling", 300, 12, 60, 77.92, true),
+    segment(3, "Dumping", 90, 2, 3, 3.9, false),
+    segment(4, "Returning", 60, 8, 8, 10.39, false),
+  ],
+  cycle: {
+    duration_min: 25,
+    energy_kwh: 77,
+    average_power_kw: 184.8,
+    peak_power_kw: 300,
+  },
+  shift: { cycles: 18, duration_min: 450, energy_kwh: 1386 },
+  dominant_segment_ids: ["segment-2"],
+  explanation:
+    "Hauling uses the most energy: 60.00 kWh of 77.00 kWh (77.92% of cycle energy), from 300.00 kW for 12.00 min (48.00% of cycle time). It also has the highest power.",
+  assumptions: [
+    { id: "A1", text: "Backend assumption one: values are user-entered." },
+    { id: "A7", text: "Backend assumption seven: fuel use is not modeled." },
+  ],
+};
+
+function segment(
+  n: number,
+  name: string,
+  power_kw: number,
+  duration_min: number,
+  energy_kwh: number,
+  share_of_cycle_energy_pct: number,
+  is_dominant: boolean,
+) {
+  return {
+    id: `segment-${n}`,
+    name,
+    power_kw,
+    duration_min,
+    energy_kwh,
+    share_of_cycle_energy_pct,
+    is_dominant,
+  };
+}

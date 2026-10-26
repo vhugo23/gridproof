@@ -164,6 +164,17 @@ Two optional challenges launch from the Power generation and Battery storage bri
 - **AC-UFG-05 [P1]:** Given any challenge text, then every number and pass/fail status shown comes from backend evidence, and the panel states the model's simplifications and that all values are synthetic.
 - **AC-UFG-06 [P1]:** Given keyboard or screen-reader use or a 390 px viewport, then the panel is operable, announces step changes politely, marks the current step with `aria-current="step"`, and causes no horizontal page scroll.
 
+### UF-02b — Mining duty-cycle energy analyzer from Industry Applications (added 2026-10-20, D-28)
+
+The Mining and off-highway brief offers **Open the Duty-Cycle Energy Analyzer**, a synthetic, stateless exercise at `#mining-duty-cycle`. The visitor enters named segments (power in kW, duration in minutes) and a cycle count per shift; the server calculates energy per segment, per cycle and per shift. It needs no session or workspace and saves nothing. The on-highway brief stays informational.
+
+- **AC-UFM-01 [P1]:** Given the Mining brief, then its dialog offers the analyzer under a synthetic label that states it does not model fuel use, range or propulsion, and the other briefs are unchanged. The analyzer is not a map facility.
+- **AC-UFM-02 [P1]:** Given the invented sample (Loading 120 kW x 3 min, Hauling 300 x 12, Dumping 90 x 2, Returning 60 x 8; 18 cycles), then the result shows 77 kWh and 25 min per cycle, 1,386 kWh and 450 min per shift, 184.8 kW average, 300 kW peak, and Hauling as the segment with the most energy.
+- **AC-UFM-03 [P1]:** Given any result, then every number, share and the dominant-segment marker and explanation come from the backend response; the UI never recomputes them, shows exact values, and says rounded shares can differ slightly from 100%.
+- **AC-UFM-04 [P1]:** Given invalid input (non-numeric text, out-of-range or over-precise values, duplicate names, more than 12 segments, or a shift longer than 1,440 minutes), then the offending field shows the server's reason, typed values are kept, and a result for older inputs is marked as outdated.
+- **AC-UFM-05 [P1]:** Given keyboard use or a 390 px viewport, then segments can be added, edited, removed and chosen without a pointer, chosen state is exposed with `aria-pressed`, and the page has no horizontal scroll.
+- **AC-UFM-06 [P1]:** Given any text, then nothing implies a recommendation, ranking, fuel use, range, propulsion, validated haul-truck performance or Cummins data; the sample values are labeled invented.
+
 ### UF-03 — Configure the virtual electrical system (P0)
 
 **Entry:** Fridley lab → **Configure** or edit in the selected asset inspector.  

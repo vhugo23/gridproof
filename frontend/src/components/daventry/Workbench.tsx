@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useId, useState, type FormEvent } from "react";
-import type { CapacityCheckRequest } from "@/lib/types";
+import { useState, type FormEvent } from "react";
+import type { CapacityCheckEvidence, CapacityCheckRequest } from "@/lib/types";
 import { useCapacityCheck } from "@/lib/useCapacityCheck";
+import Field from "../workbench/Field";
 import {
   FocusPanel,
   LineupHighlight,
@@ -30,61 +31,20 @@ function parseNumber(text: string): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
-function Field({
-  label,
-  unit,
-  hint,
-  value,
-  error,
-  onChange,
-}: {
-  label: string;
-  unit: string;
-  hint: string;
-  value: string;
-  error?: string;
-  onChange: (value: string) => void;
-}) {
-  const id = useId();
-  return (
-    <div>
-      <label htmlFor={id} className="text-sm font-medium text-gp-text">
-        {label}
-      </label>
-      <div className="mt-1 flex items-center gap-2">
-        <input
-          id={id}
-          inputMode="decimal"
-          autoComplete="off"
-          value={value}
-          aria-invalid={Boolean(error)}
-          aria-describedby={`${id}-hint${error ? ` ${id}-err` : ""}`}
-          onChange={(event) => onChange(event.target.value)}
-          className={`w-28 rounded-md border bg-gp-bg px-2.5 py-1.5 text-right font-mono text-sm text-gp-text ${
-            error ? "border-gp-error" : "border-gp-line-strong"
-          }`}
-        />
-        <span className="text-xs text-gp-faint">{unit}</span>
-      </div>
-      <p id={`${id}-hint`} className="mt-1 text-[11px] text-gp-faint">
-        {hint}
-      </p>
-      {error && (
-        <p id={`${id}-err`} role="alert" className="mt-1 text-xs text-gp-error">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
 export default function Workbench({ onBack }: { onBack: () => void }) {
   const [fields, setFields] = useState<Fields>({
     kw: "400",
     pf: "0.8",
     margin: "0",
   });
+  // The inputs of the latest attempt (used for server field errors).
   const [ranWith, setRanWith] = useState<Fields | null>(null);
+  // The inputs that produced the result on screen. A failed re-run must not
+  // replace them, or older evidence would look current.
+  const [shown, setShown] = useState<{
+    result: CapacityCheckEvidence;
+    fields: Fields;
+  } | null>(null);
   const [localErrors, setLocalErrors] = useState<
     Partial<Record<FieldKey, string>>
   >({});
@@ -92,12 +52,17 @@ export default function Workbench({ onBack }: { onBack: () => void }) {
   const { status, result, error, run } = useCapacityCheck();
   const inspected = result?.packages.find((p) => p.id === inspectedId) ?? null;
 
+  // A new result always comes from the latest attempt, so pair them as it arrives.
+  if (result && ranWith && shown?.result !== result)
+    setShown({ result, fields: ranWith });
+
   const stale =
     result !== null &&
-    ranWith !== null &&
-    (ranWith.kw !== fields.kw ||
-      ranWith.pf !== fields.pf ||
-      ranWith.margin !== fields.margin);
+    shown !== null &&
+    shown.result === result &&
+    (shown.fields.kw !== fields.kw ||
+      shown.fields.pf !== fields.pf ||
+      shown.fields.margin !== fields.margin);
 
   const set = (key: keyof Fields) => (value: string) =>
     setFields((current) => ({ ...current, [key]: value }));
