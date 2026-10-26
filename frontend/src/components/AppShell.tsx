@@ -7,7 +7,12 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { experienceFor, DAVENTRY_HASH, MINING_HASH } from "@/lib/experiences";
+import {
+  experienceFor,
+  DAVENTRY_HASH,
+  MINING_HASH,
+  MOBILE_HASH,
+} from "@/lib/experiences";
 import { useFacilities } from "@/lib/useFacilities";
 import { useWorkspaceConfig } from "@/lib/useWorkspaceConfig";
 import { usePlayback } from "@/lib/usePlayback";
@@ -18,6 +23,7 @@ import FacilityCard from "./map/FacilityCard";
 import IndustryGallery from "./gallery/IndustryGallery";
 import Workbench from "./daventry/Workbench";
 import DutyCycleWorkbench from "./mining/DutyCycleWorkbench";
+import Planner from "./mobilepower/Planner";
 import LabScene from "./lab/LabScene";
 import type { AssetId } from "./lab/assets";
 import ChallengePanel from "./challenges/ChallengePanel";
@@ -92,6 +98,7 @@ export default function AppShell() {
   const inLab = hash === LAB_HASH;
   const inWorkbench = hash === DAVENTRY_HASH;
   const inMining = hash === MINING_HASH;
+  const inMobile = hash === MOBILE_HASH;
   const [enteringId, setEnteringId] = useState<string | null>(null);
   const [activeFacilityId, setActiveFacilityId] = useState("fridley");
   const [selected, setSelected] = useState<AssetId | null>(null);
@@ -190,6 +197,18 @@ export default function AppShell() {
         <Header right={<ApiChip state={apiState} />} />
         <main className="flex-1 px-5 py-3">
           <DutyCycleWorkbench onBack={leaveLab} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (inMobile) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header right={<ApiChip state={apiState} />} />
+        <main className="flex-1 px-5 py-3">
+          <Planner onBack={leaveLab} />
         </main>
         <Footer />
       </div>

@@ -6,6 +6,8 @@ import type {
   DutyCycleRequest,
   ErrorDetail,
   FacilitiesResponse,
+  MobilePowerEvidence,
+  MobilePowerRequest,
   SavedVersion,
   SessionResponse,
   StartupCheckEvidence,
@@ -213,6 +215,20 @@ export function runDutyCycle(
   payload: DutyCycleRequest,
 ): Promise<DutyCycleEvidence> {
   return request<DutyCycleEvidence>("/demo/duty-cycle", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Stateless and session-free (API-19): the server validates the user's site
+ * loads and returns the deterministic demand screening for four synthetic packages.
+ */
+export function runMobilePower(
+  payload: MobilePowerRequest,
+): Promise<MobilePowerEvidence> {
+  return request<MobilePowerEvidence>("/demo/mobile-power", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

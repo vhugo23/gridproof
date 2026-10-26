@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CAPACITY_CASE_1,
   DUTY_CYCLE_SAMPLE,
+  MOBILE_POWER_SAMPLE,
   apiError,
   current,
   facilities,
@@ -277,6 +278,70 @@ describe("Industry Applications -> Mining duty-cycle analyzer", () => {
     ).toBeNull();
     expect(facilities.map((f) => f.id)).toEqual(
       expect.not.arrayContaining(["mining"]),
+    );
+  });
+});
+
+describe("Industry Applications -> Mobile-Site Power Planner", () => {
+  function stubMobileApi() {
+    const fn = vi.fn((url: string) => {
+      if (url.endsWith("/facilities"))
+        return Promise.resolve(json(200, { catalog_version: 1, facilities }));
+      if (url.endsWith("/demo/mobile-power"))
+        return Promise.resolve(json(200, MOBILE_POWER_SAMPLE));
+      return Promise.resolve(apiError(404, "NOT_FOUND"));
+    });
+    vi.stubGlobal("fetch", fn);
+    return fn;
+  }
+  const urls = (fn: ReturnType<typeof stubMobileApi>) =>
+    fn.mock.calls.map(([u]) => String(u));
+
+  it("opens from the on-highway brief by hash, calculates without any session call and returns to the map", async () => {
+    const fn = stubMobileApi();
+    render(<AppShell />);
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: /On-highway trucks and mobile power/,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Open the Mobile-Site Power Planner/,
+      }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Mobile-Site Power Planner" }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe("#mobile-power-planner");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Calculate site demand" }),
+    );
+    expect(await screen.findByTestId("site-summary")).toBeInTheDocument();
+    expect(urls(fn)).toContain("/api/v1/demo/mobile-power");
+    expect(urls(fn).some((u) => /session|configurations/.test(u))).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: /← Map/ }));
+    await waitFor(() => expect(window.location.hash).toBe(""));
+    expect(
+      await screen.findByRole("heading", { name: "Explore Power Integration" }),
+    ).toBeInTheDocument();
+    expect(urls(fn).some((u) => /session|configurations/.test(u))).toBe(false);
+  });
+
+  it("opens directly from its address and is not a map facility", async () => {
+    window.location.hash = "#mobile-power-planner";
+    const fn = stubMobileApi();
+    render(<AppShell />);
+    expect(
+      await screen.findByRole("heading", { name: "Mobile-Site Power Planner" }),
+    ).toBeInTheDocument();
+    expect(urls(fn).some((u) => /session|configurations/.test(u))).toBe(false);
+    window.location.hash = "";
+    await screen.findByRole("heading", { name: "Explore Power Integration" });
+    expect(facilities.map((f) => f.id)).toEqual(
+      expect.not.arrayContaining(["mobile"]),
     );
   });
 });

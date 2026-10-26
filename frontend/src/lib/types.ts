@@ -256,3 +256,73 @@ export type DutyCycleEvidence = {
   explanation: string;
   assumptions: Array<{ id: string; text: string }>;
 };
+
+// Mobile-Site Power Planner (docs/05-api-contracts.md API-19). Rendered as returned;
+// the frontend never recomputes totals, shares, headroom, utilization or categories.
+
+export type MobilePowerLoadInput = {
+  name: string;
+  quantity: number;
+  rated_kw: number;
+  simultaneity_factor: number;
+};
+
+export type MobilePowerRequest = {
+  loads: MobilePowerLoadInput[];
+  capacity_margin_pct: number;
+};
+
+export type MobilePowerLoad = {
+  id: string;
+  name: string;
+  quantity: number;
+  rated_kw: number;
+  simultaneity_factor: number;
+  connected_kw: number;
+  demand_kw: number;
+  share_of_demand_pct: number;
+  is_dominant: boolean;
+};
+
+export type MobilePowerComparison = {
+  status: "meets" | "does_not_meet";
+  comparator: "<=";
+  required: number;
+  capacity: number;
+  /** Rating minus requirement; negative when the requirement is above the rating. */
+  headroom_kw: number;
+  utilization_pct: number;
+};
+
+export type MobilePowerCategory =
+  | "does_not_meet_modeled"
+  | "meets_modeled_only"
+  | "meets_modeled_and_all_simultaneous";
+
+export type MobilePowerPackage = {
+  id: string;
+  label: string;
+  rated_kw: number;
+  modeled_demand: MobilePowerComparison;
+  all_simultaneous: MobilePowerComparison;
+  category: MobilePowerCategory;
+  category_label: string;
+  explanation: string;
+};
+
+export type MobilePowerEvidence = {
+  model_version: string;
+  inputs: MobilePowerRequest;
+  loads: MobilePowerLoad[];
+  totals: {
+    connected_kw: number;
+    demand_kw: number;
+    overall_simultaneity_pct: number;
+    required_kw: number;
+    all_simultaneous_required_kw: number;
+  };
+  dominant_load_ids: string[];
+  packages: MobilePowerPackage[];
+  explanation: string;
+  assumptions: Array<{ id: string; text: string }>;
+};
