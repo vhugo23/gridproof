@@ -176,7 +176,7 @@ export default function FacilityMap({
                     interactive
                       ? "interactive virtual lab"
                       : experience
-                        ? "synthetic generator workbench"
+                        ? experience.markerLabel
                         : "informational site"
                   }`}
                   className="cursor-pointer outline-none [&:focus-visible>circle:first-child]:stroke-gp-red"

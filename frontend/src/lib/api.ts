@@ -4,6 +4,8 @@ import type {
   CurrentConfiguration,
   DutyCycleEvidence,
   DutyCycleRequest,
+  EnginePlanEvidence,
+  EnginePlanRequest,
   ErrorDetail,
   FacilitiesResponse,
   MobilePowerEvidence,
@@ -229,6 +231,20 @@ export function runMobilePower(
   payload: MobilePowerRequest,
 ): Promise<MobilePowerEvidence> {
   return request<MobilePowerEvidence>("/demo/mobile-power", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Stateless and session-free (API-20): the server validates the user's synthetic
+ * engine test plan and returns its planning coverage. Never a verification result.
+ */
+export function runEngineTestPlan(
+  payload: EnginePlanRequest,
+): Promise<EnginePlanEvidence> {
+  return request<EnginePlanEvidence>("/demo/engine-test-plan", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

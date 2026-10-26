@@ -16,7 +16,7 @@ This document specifies **what users see, do, and receive**, before determining 
 | Area | Approved decision | Consequence |
 |---|---|---|
 | First screen | **Geographic map** | Visitors select facilities before entering a lab |
-| Operating workspace | **Fridley-inspired virtual PIC only** | Seymour and Daventry show public-context information, not live operations; Daventry also offers an independent synthetic workbench |
+| Operating workspace | **Fridley-inspired virtual PIC only** | Seymour and Daventry show public-context information, not live operations; each also offers an independent synthetic workbench |
 | Visualization | **Hybrid: 2.5D site + focused 3D inspector** | Clickable physical assets; static image/text fallback for missing models or WebGL |
 | Brand | **Independent GridProof** | Notice of non-affiliation and synthetic results in app/report; no official Cummins app shell |
 | AI | **Optional Gemini test drafting** | Human review, deterministic validation, explicit confirmation; manual tests always work |
@@ -51,7 +51,7 @@ This document specifies **what users see, do, and receive**, before determining 
 │                                      ├── Report export
 │                                      └── (Optional) AI draft test
 │
-├── Select Seymour ──> Informational facility card only
+├── Select Seymour ──> Facility card (real-site facts) + independent synthetic test-plan workbench
 └── Select Daventry ──> Facility card (public context) + Open Synthetic Workbench ──> UF-01a
 ```
 
@@ -102,7 +102,7 @@ Routes are **navigation concepts**, not mandated implementation URLs other than 
 **Branches:**
 
 - **Fridley:** **Enter Virtual Lab** opens synthetic PIC-inspired workspace.
-- **Seymour:** **View Facility Context** stays informational. No “live status,” control panel, or editable fake plant data.
+- **Seymour:** the factual site context stays informational. No “live status,” control panel, or editable fake plant data. Beside it the card offers **Open Test-Plan Workbench** (UF-02d), an independent synthetic planning exercise that is not the site.
 - **Daventry:** the card keeps the real site's factual public description under “About the real site” and adds a separate, clearly labeled **Open Synthetic Workbench** entry (UF-01a). *Amended 2026-10-19 (D-24, D-27).* It offers no live status, plant control or official product selection.
 - **Map tiles unavailable:** Show accessible fallback list with exactly the same facility-selection/navigation capability. Map may be unavailable, but the product is navigable.
 
@@ -111,7 +111,7 @@ Routes are **navigation concepts**, not mandated implementation URLs other than 
 - **AC-UF01-01 [P0]:** Given a new session, when GridProof opens, then a geographic map is the default experience and the Fridley, Seymour and Daventry entries are available.
 - **AC-UF01-02 [P0]:** Given a facility marker, when activated by mouse, keyboard or supported touch, then its corresponding detail card opens and the selected location is distinguishable without color alone.
 - **AC-UF01-03 [P0]:** Given Fridley is selected, when **Enter Virtual Lab** is clicked, then Fridley's virtual lab opens without showing data for any other location.
-- **AC-UF01-04 [P0]:** Given Seymour is selected, when its card opens, then only informational context is shown, without a functional lab launch. Given Daventry is selected, when its card opens, then the factual public description appears under “About the real site”, a separate synthetic-workbench entry is clearly labeled independent and synthetic, and no Fridley lab launch or session is offered (amended 2026-10-19, D-24 and D-27).
+- **AC-UF01-04 [P0]:** Given Seymour is selected, when its card opens, then the factual public description appears under “About the real site”, a separate test-plan-workbench entry is clearly labeled independent and synthetic, and no Fridley lab launch or session is offered (amended 2026-10-26, D-30). Given Daventry is selected, when its card opens, then the factual public description appears under “About the real site”, a separate synthetic-workbench entry is clearly labeled independent and synthetic, and no Fridley lab launch or session is offered (amended 2026-10-19, D-24 and D-27).
 - **AC-UF01-05 [P0]:** Given any facility card, when viewed, then a user can distinguish real verified site context from synthetic operational examples, with independent-project disclosure.
 - **AC-UF01-06 [P1]:** Given unavailable external map tiles, when the map fails to render, then a facility list still allows selection and Fridley lab entry; failure is explained instead of a blank screen.
 
@@ -121,7 +121,7 @@ Routes are **navigation concepts**, not mandated implementation URLs other than 
 **Inputs:** real power demand (kW), power factor, optional capacity margin (%). The backend validates all of them (API-17).
 **Output:** calculated demand, four fixed synthetic packages, and for each package a separate PASS or FAIL for real power (kW) and for apparent power (kVA) with required value, package rating, margin and a server-written explanation. No overall winner, ranking or recommendation.
 
-- **AC-UFD-01 [P1]:** Given Daventry is selected, when the card opens, then it offers the workbench under a synthetic label and shows the real site's description separately; Seymour is unchanged and Fridley still opens its lab.
+- **AC-UFD-01 [P1]:** Given Daventry is selected, when the card opens, then it offers the workbench under a synthetic label and shows the real site's description separately; Seymour offers its own separate workbench (UF-02d) and Fridley still opens its lab.
 - **AC-UFD-02 [P1]:** Given valid inputs, when the check runs, then each of the four packages shows two separate verdicts, the demand values, the package ratings, the margins and an explanation, all taken from the server response.
 - **AC-UFD-03 [P1]:** Given inputs exactly on a package rating, then the requirement passes with a margin of 0.00; one unit over, it fails. Verdicts do not depend on binary floating-point rounding.
 - **AC-UFD-04 [P1]:** Given invalid inputs (range, whole-number, decimal-place or type violations), then the server rejects them and the form shows each field's reason without losing what was typed.
@@ -186,6 +186,22 @@ The On-highway trucks and mobile power brief offers **Open the Mobile-Site Power
 - **AC-UFP-04b [P1]:** Given the result tiles and explanations, then 55.20 kW is described as simultaneous (modeled) demand that follows from the user's simultaneity assumptions, and never as a measured or guaranteed peak.
 - **AC-UFP-05 [P1]:** Given invalid input (non-numeric text, out-of-range or over-precise values, duplicate names, more than 12 loads, or more than 2,000 kW connected), then the offending field shows the server's reason, typed values are kept, and a result for older inputs is marked as outdated.
 - **AC-UFP-06 [P1]:** Given keyboard use or a 390 px viewport, then loads can be added, edited, removed and chosen without a pointer, focus moves to the new load or a neighbour, results are announced politely, categories and verdicts carry words as well as symbols, the drawn ladder has a text equivalent, and the page has no horizontal scroll.
+
+### UF-02d — Seymour Engine Test-Plan Workbench from the Seymour card (added 2026-10-26, D-30)
+
+**Entry:** select Seymour on the map, then **Open Test-Plan Workbench** (`#seymour-test-plan`; also reachable by address). No session, workspace or Fridley data is involved.
+**Inputs:** an objective, 1 to 10 requirements (speed range in rpm, torque range in N·m, optional minimum theoretical power in kW, minimum planned entries, minimum planned hold in minutes) and 1 to 12 ordered operating points (label, speed, torque, planned hold). The backend validates all of them (API-20).
+**Output:** theoretical shaft power per point, a status per requirement (Covered by plan, Partly covered, Not covered) with the bound each point misses, a traceability matrix, a planned hold timeline, a speed-torque planning diagram and an evidence checklist, always with a verification status of not verified.
+**Boundaries:** planning coverage is not acceptance; a matching point does not show an engine can operate there; there is no pass, verified or performance status, no engine map, limit, envelope, fuel, efficiency or emissions data, and nothing is saved.
+
+- **AC-UFS-01 [P1]:** Given Seymour is selected, when the card opens, then it offers the workbench under a synthetic label, shows the real site's description separately under “About the real site”, and offers no lab launch; Fridley, Daventry, Mining and Mobile Power are unchanged.
+- **AC-UFS-02 [P1]:** Given the invented sample (points A 1000 rpm 500 N·m 10 min, B 1500 rpm 1000 N·m 20 min, C 1800 rpm 800 N·m 15 min, D 1200 rpm 1300 N·m 15 min; four regions), then the powers are 52.36, 157.08, 150.80 and 163.36 kW, two requirements are Covered by plan, one is Partly covered (1 of 2 entries, 15 of 20 min) and one is Not covered (Point D is 50.00 N·m below the torque range), planned hold time is 60 min, and Point D matches no requirement.
+- **AC-UFS-03 [P1]:** Given any result, then every number, status and explanation comes from the backend response, the UI never recomputes them, and the result states that verification is not verified. The UI never shows a pass, success, verified or performance status.
+- **AC-UFS-04 [P1]:** Given repeated speed/torque coordinates, then each repeat counts as a separate planned entry toward a minimum, nothing is deduplicated, and the result discloses the number of distinct conditions and that repeats do not establish distinct-condition coverage.
+- **AC-UFS-05 [P1]:** Given the timeline and summary, then they are labeled Planned hold time (scheduled holds only, not total elapsed test time); a hold is not measured stabilization.
+- **AC-UFS-06 [P1]:** Given a theoretical power of 157.0796... kW (shown 157.08) and a 157.08 kW minimum, then the requirement is not met, because comparisons use unrounded values, and the UI says "Equal when rounded, not equal exactly."
+- **AC-UFS-07 [P1]:** Given the speed-torque diagram, then it draws only the user's requirement regions and planned points (plus the order line), with no performance curve, limit or operating envelope, and has a text alternative.
+- **AC-UFS-08 [P1]:** Given keyboard use and a 390 px screen, then every control is labeled and reachable, points can be reordered with buttons with focus kept on the moved point, adds and removes keep focus, and the page has no horizontal overflow.
 
 ### UF-03 — Configure the virtual electrical system (P0)
 
@@ -444,7 +460,7 @@ The following **three Step 2 decisions are approved** and must guide the databas
 ## 9. QA walkthrough for final demo
 
 1. Open a fresh browser; verify map-first landing, attribution and all three facility entries.
-2. Select Seymour: confirm informational-only. Select Daventry: open the synthetic workbench, run 300 kW at 0.70 power factor and confirm package B passes real power but fails apparent power. Select Fridley: enter simulated lab.
+2. Select Seymour: confirm the real-site description and the synthetic test-plan workbench entry (no lab launch), open it and check the sample plan: 2 of 4 requirements covered by plan, 1 partly, 1 not covered, 60 min of planned hold time, and a verification status of not verified. Select Daventry: open the synthetic workbench, run 300 kW at 0.70 power factor and confirm package B passes real power but fails apparent power. Select Fridley: enter simulated lab.
 3. Select G1 from the physical layout and accessible equipment list; verify matching ID, parameters and illustrated asset disclosure.
 4. Validate/snapshot the baseline configuration; choose outage scenario; execute; record run ID, traces and checks.
 5. Start with the seeded **G1 5 s** baseline and **10 s ready-by assertion**; save a revised **15 s** G1 startup-delay configuration and rerun. Verify computed readiness pass→fail while load continuity remains independently computed.

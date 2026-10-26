@@ -15,6 +15,7 @@ import {
   facilities,
   json,
 } from "@/test/fixtures";
+import { ENGINE_PLAN_SAMPLE } from "@/test/enginePlanFixture";
 import AppShell from "./AppShell";
 
 beforeEach(() => {
@@ -79,7 +80,9 @@ describe("map -> lab -> G1 -> save flow", () => {
     expect(
       screen.queryByRole("button", { name: /Enter Virtual Lab/ }),
     ).not.toBeInTheDocument();
-    expect(screen.getByText(/Lab not modeled/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Open Test-Plan Workbench/ }),
+    ).toBeInTheDocument();
   });
 
   it("does not create a session until the lab is opened", async () => {
@@ -430,19 +433,130 @@ describe("map -> Daventry synthetic workbench", () => {
     expect(urls(fn).some((u) => /session|configurations/.test(u))).toBe(false);
   });
 
-  it("leaves Fridley and Seymour as before", async () => {
+  it("leaves Fridley as before and gives Seymour its own workbench, never the lab", async () => {
     stubWorkbenchApi();
     render(<AppShell />);
     expect(
       await screen.findAllByRole("button", { name: /Enter Virtual Lab/ }),
     ).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: /Seymour/ }));
-    expect(screen.getByText(/Lab not modeled/)).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Open Synthetic Workbench/ }),
     ).toBeNull();
     expect(
       screen.queryByRole("button", { name: /Enter Virtual Lab/ }),
     ).toBeNull();
+    expect(
+      screen.getByRole("button", { name: /Open Test-Plan Workbench/ }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("map -> Seymour synthetic engine test-plan workbench", () => {
+  function stubSeymourApi() {
+    const fn = vi.fn((url: string) => {
+      if (url.endsWith("/facilities"))
+        return Promise.resolve(json(200, { catalog_version: 1, facilities }));
+      if (url.endsWith("/demo/engine-test-plan"))
+        return Promise.resolve(json(200, ENGINE_PLAN_SAMPLE));
+      return Promise.resolve(apiError(404, "NOT_FOUND"));
+    });
+    vi.stubGlobal("fetch", fn);
+    return fn;
+  }
+  const urls = (fn: ReturnType<typeof stubSeymourApi>) =>
+    fn.mock.calls.map(([u]) => String(u));
+
+  it("labels Seymour's workbench as synthetic next to the unchanged real-site description", async () => {
+    stubSeymourApi();
+    render(<AppShell />);
+    fireEvent.click(await screen.findByRole("button", { name: /Seymour/ }));
+    const card = screen.getByRole("complementary", {
+      name: /Seymour site details/,
+    });
+    expect(within(card).getByText("Synthetic workbench")).toBeInTheDocument();
+    expect(within(card).getByText("About the real site")).toBeInTheDocument();
+    expect(
+      within(card).getByText("Synthetic test description."),
+    ).toBeInTheDocument();
+    expect(
+      within(card).getByText(/the site's software, procedures or data/),
+    ).toBeInTheDocument();
+    expect(
+      within(card).getByText(/Planning coverage only, not verification/),
+    ).toBeInTheDocument();
+    expect(
+      within(card).getByRole("button", { name: /Open Test-Plan Workbench/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(card).getByRole("img", { name: /requirement regions on a speed/ }),
+    ).toHaveAttribute("src", "/illustrations/seymour-test-plan.svg");
+    expect(
+      within(card).queryByRole("button", { name: /Enter Virtual Lab/ }),
+    ).toBeNull();
+    expect(
+      screen.getByRole("button", {
+        name: /Seymour — synthetic engine test-plan workbench/,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens from the card, checks a plan and returns to the map without any session call", async () => {
+    const fn = stubSeymourApi();
+    render(<AppShell />);
+    fireEvent.click(await screen.findByRole("button", { name: /Seymour/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Open Test-Plan Workbench/ }),
+    );
+    expect(
+      await screen.findByRole("heading", {
+        name: "Engine Test-Plan Workbench",
+      }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe("#seymour-test-plan");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Check plan coverage" }),
+    );
+    expect(await screen.findByTestId("plan-summary")).toBeInTheDocument();
+    expect(screen.getByTestId("verification-banner")).toHaveTextContent(
+      "not verified",
+    );
+    expect(urls(fn)).toContain("/api/v1/demo/engine-test-plan");
+    expect(urls(fn).some((u) => /session|configurations/.test(u))).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: /← Map/ }));
+    await waitFor(() => expect(window.location.hash).toBe(""));
+    expect(
+      await screen.findByRole("heading", { name: "Explore Power Integration" }),
+    ).toBeInTheDocument();
+    expect(urls(fn).some((u) => /session|configurations/.test(u))).toBe(false);
+  });
+
+  it("opens the workbench directly from its address", async () => {
+    window.location.hash = "#seymour-test-plan";
+    const fn = stubSeymourApi();
+    render(<AppShell />);
+    expect(
+      await screen.findByRole("heading", {
+        name: "Engine Test-Plan Workbench",
+      }),
+    ).toBeInTheDocument();
+    expect(urls(fn).some((u) => /session|configurations/.test(u))).toBe(false);
+  });
+
+  it("keeps the other workbenches reachable by their own addresses", async () => {
+    stubSeymourApi();
+    for (const [hash, heading] of [
+      ["#daventry-workbench", "Daventry Generator Configuration Workbench"],
+      ["#mobile-power-planner", "Mobile-Site Power Planner"],
+    ] as const) {
+      window.location.hash = hash;
+      const { unmount } = render(<AppShell />);
+      expect(
+        await screen.findByRole("heading", { level: 1, name: heading }),
+      ).toBeInTheDocument();
+      unmount();
+    }
   });
 });
