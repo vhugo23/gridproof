@@ -15,6 +15,8 @@ export type FacilityExperience = {
 export const DAVENTRY_HASH = "#daventry-workbench";
 // Opened from the Mining application brief, not from a facility.
 export const MINING_HASH = "#mining-duty-cycle";
+// Opened from the On-highway and mobile power brief, not from a facility.
+export const MOBILE_HASH = "#mobile-power-planner";
 
 const EXPERIENCES: Record<string, FacilityExperience> = {
   daventry: {

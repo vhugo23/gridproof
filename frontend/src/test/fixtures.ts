@@ -4,6 +4,9 @@ import type {
   CurrentConfiguration,
   DutyCycleEvidence,
   Facility,
+  MobilePowerComparison,
+  MobilePowerEvidence,
+  MobilePowerPackage,
   StartupCheckEvidence,
   SystemConfigV1,
 } from "@/lib/types";
@@ -423,5 +426,147 @@ function segment(
     energy_kwh,
     share_of_cycle_energy_pct,
     is_dominant,
+  };
+}
+
+/**
+ * Hand-built Mobile-Site Power Planner evidence in the shape of API-19, for tests of
+ * how the UI reads evidence. Values are literals computed by hand (the real model is
+ * checked by the backend tests): the sample site at a 25% margin is 87.20 kW
+ * connected, 55.20 kW demand (63.30%), 69.00 kW required and 109.00 kW if every load
+ * runs at once; Welding machines contribute the most (18 / 55.2 = 32.61%).
+ */
+export const MOBILE_POWER_SAMPLE: MobilePowerEvidence = {
+  model_version: "mobile-power-v1",
+  inputs: {
+    loads: [
+      {
+        name: "LED floodlights",
+        quantity: 8,
+        rated_kw: 0.4,
+        simultaneity_factor: 1,
+      },
+      {
+        name: "Cabin HVAC",
+        quantity: 2,
+        rated_kw: 7.5,
+        simultaneity_factor: 0.8,
+      },
+      {
+        name: "Welding machines",
+        quantity: 3,
+        rated_kw: 12,
+        simultaneity_factor: 0.5,
+      },
+      {
+        name: "Air compressor",
+        quantity: 1,
+        rated_kw: 22,
+        simultaneity_factor: 0.75,
+      },
+      {
+        name: "Water pumps",
+        quantity: 2,
+        rated_kw: 5.5,
+        simultaneity_factor: 0.5,
+      },
+    ],
+    capacity_margin_pct: 25,
+  },
+  loads: [
+    mobileLoad(1, "LED floodlights", 8, 0.4, 1, 3.2, 3.2, 5.8, false),
+    mobileLoad(2, "Cabin HVAC", 2, 7.5, 0.8, 15, 12, 21.74, false),
+    mobileLoad(3, "Welding machines", 3, 12, 0.5, 36, 18, 32.61, true),
+    mobileLoad(4, "Air compressor", 1, 22, 0.75, 22, 16.5, 29.89, false),
+    mobileLoad(5, "Water pumps", 2, 5.5, 0.5, 11, 5.5, 9.96, false),
+  ],
+  totals: {
+    connected_kw: 87.2,
+    demand_kw: 55.2,
+    overall_simultaneity_pct: 63.3,
+    required_kw: 69,
+    all_simultaneous_required_kw: 109,
+  },
+  dominant_load_ids: ["load-3"],
+  packages: [
+    mobilePackage(1, 30, [-39, 230], [-79, 363.33]),
+    mobilePackage(2, 60, [-9, 115], [-49, 181.67]),
+    mobilePackage(3, 100, [31, 69], [-9, 109]),
+    mobilePackage(4, 150, [81, 46], [41, 72.67]),
+  ],
+  explanation:
+    "The load with the most modeled demand is Welding machines: 18.00 kW of 55.20 kW (32.61% of modeled demand). Backend explanation text.",
+  assumptions: [
+    { id: "A1", text: "Backend assumption one: packages are synthetic." },
+    { id: "A3", text: "Backend assumption three: steady-state kW only." },
+  ],
+};
+
+function mobileLoad(
+  n: number,
+  name: string,
+  quantity: number,
+  rated_kw: number,
+  simultaneity_factor: number,
+  connected_kw: number,
+  demand_kw: number,
+  share_of_demand_pct: number,
+  is_dominant: boolean,
+) {
+  return {
+    id: `load-${n}`,
+    name,
+    quantity,
+    rated_kw,
+    simultaneity_factor,
+    connected_kw,
+    demand_kw,
+    share_of_demand_pct,
+    is_dominant,
+  };
+}
+
+function mobileComparison(
+  required: number,
+  capacity: number,
+  [headroom_kw, utilization_pct]: [number, number],
+): MobilePowerComparison {
+  return {
+    status: headroom_kw >= 0 ? "meets" : "does_not_meet",
+    comparator: "<=",
+    required,
+    capacity,
+    headroom_kw,
+    utilization_pct,
+  };
+}
+
+function mobilePackage(
+  n: number,
+  rated_kw: number,
+  modeled: [number, number],
+  all: [number, number],
+): MobilePowerPackage {
+  const modeledMeets = modeled[0] >= 0;
+  const allMeets = all[0] >= 0;
+  const category = !modeledMeets
+    ? "does_not_meet_modeled"
+    : allMeets
+      ? "meets_modeled_and_all_simultaneous"
+      : "meets_modeled_only";
+  return {
+    id: `mobile-m${n}`,
+    label: `Synthetic Mobile Package M${n}`,
+    rated_kw,
+    modeled_demand: mobileComparison(69, rated_kw, modeled),
+    all_simultaneous: mobileComparison(109, rated_kw, all),
+    category,
+    category_label: {
+      does_not_meet_modeled: "Does not meet modeled demand",
+      meets_modeled_only: "Meets modeled demand only",
+      meets_modeled_and_all_simultaneous:
+        "Meets both modeled and all-simultaneous demand",
+    }[category],
+    explanation: `Backend explanation for package M${n}.`,
   };
 }

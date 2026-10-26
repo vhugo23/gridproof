@@ -91,6 +91,18 @@
 - `useCapacityCheck` and `useStatelessCheck` duplicate the same small error-mapping logic; the Daventry hook was left untouched on purpose.
 - Deployment: until the Render backend exposes API-18, the Mining button opens an analyzer that answers "Request failed (404)". Render did not auto-deploy API-17 promptly.
 
+## Mobile-Site Power Planner notes (2026-10-26)
+
+- The planner calculates demand from the loads a user types. It is not validated against any real site or machine and uses no equipment data; the sample values (floodlights, cabin HVAC, welding machines, compressor, pumps) and the four packages (30, 60, 100 and 150 kW) are invented and are not Cummins products.
+- Simultaneity factors are user-entered planning assumptions, not measured peak concurrency or a physical operating schedule. The model cannot check them, and the result moves directly with them; the all-simultaneous comparison exists to show that sensitivity.
+- It screens steady-state real power (kW) only. It does not validate kVA, power factor, voltage, motor starting, step loading, derating, protection, fuel, emissions, paralleling, cabling or full equipment suitability, and it does not model the truck or trailer (weight, packaging, PTO, range).
+- Each package has one continuous kW rating; there is no prime or standby distinction. Packages are listed by rating, not ranked, and no package is recommended; a category only states how a package compares with the numbers entered.
+- Limits (12 loads, quantity 100, 500 kW per rating, 2,000 kW total connected, margin 50%) are arbitrary exercise bounds, not engineering limits. When demand exceeds every package, no combination of packages is evaluated.
+- Displayed values are rounded to 2 decimals while verdicts use exact values, so a requirement can display equal to a rating and still fail; the package card shows an "Equal when rounded, not equal exactly" note with the server's explanation. Modeled demand follows from the user's simultaneity assumptions and is never a measured or guaranteed peak. Displayed shares can add up to slightly more or less than 100%.
+- Cross-field errors (duplicate names, the 2,000 kW total) appear only after every single field is valid. Results are not saved and there is no export; refreshing returns to the sample values.
+- The domain module repeats the small decimal and name validators of the duty-cycle module on purpose, so the exercises stay independent.
+- Deployment: until the Render backend exposes API-19, the planner's Calculate button answers "Request failed (404)". Render did not auto-deploy API-17 promptly, so the backend must be live before the frontend is released.
+
 ## Configuration schema notes (A-02)
 
 - Docs 01, 02 and 03 mention an adjustable load bank, but `SystemConfigV1` has no load-bank field by design: `equipment.load.critical_kw` is the baseline load, `set_load_kw` scenario events change demand during a simulation, and the load-bank visualization shows that simulated demand (decision D-18; doc 05 v1.2).

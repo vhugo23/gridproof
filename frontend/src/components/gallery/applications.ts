@@ -1,6 +1,6 @@
 import type { ChallengeId } from "../challenges/deriveChallenge";
 import type { AssetId } from "../lab/assets";
-import { MINING_HASH } from "@/lib/experiences";
+import { MINING_HASH, MOBILE_HASH } from "@/lib/experiences";
 
 export type ApplicationAction = {
   label: string;
@@ -129,5 +129,10 @@ export const APPLICATIONS: Application[] = [
       "Packaging: weight and space on a vehicle or trailer limit how much equipment fits.",
       "Refueling and uptime: availability of fuel and service along the route shapes operations.",
     ],
+    workbench: {
+      label: "Open the Mobile-Site Power Planner",
+      hash: MOBILE_HASH,
+      note: "An independent GridProof exercise: list the loads of a temporary site and the server calculates connected load, simultaneous demand and required capacity, then compares them with four invented mobile power packages. Nothing is saved and no equipment data is used. It screens steady-state kW only and does not model the truck or trailer.",
+    },
   },
 ];

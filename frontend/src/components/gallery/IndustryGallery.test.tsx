@@ -132,15 +132,15 @@ describe("application brief dialog", () => {
     expect(onOpenLab).toHaveBeenLastCalledWith(null, undefined);
     expect(onOpenLab).toHaveBeenCalledTimes(3);
 
-    // Only the on-highway brief remains informational.
+    // The on-highway brief opens a workbench, never the lab.
     fireEvent.click(card("On-highway trucks and mobile power"));
     const dialog = screen.getByRole("dialog");
     expect(
-      within(dialog).getByText(/Informational brief only/),
-    ).toBeInTheDocument();
+      within(dialog).queryByText(/Informational brief only/),
+    ).not.toBeInTheDocument();
     expect(within(dialog).queryByRole("button", { name: /lab/i })).toBeNull();
     expect(
-      within(dialog).queryByRole("button", { name: /Analyzer/ }),
+      within(dialog).queryByRole("button", { name: /Duty-Cycle/ }),
     ).toBeNull();
     fireEvent.click(
       screen.getByRole("button", { name: "Close application brief" }),
@@ -170,6 +170,34 @@ describe("application brief dialog", () => {
       }),
     );
     expect(onOpenWorkbench).toHaveBeenCalledWith("#mining-duty-cycle");
+    expect(onOpenLab).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("launches the Mobile-Site Power Planner from its brief by hash, not the lab", () => {
+    const onOpenLab = vi.fn();
+    const onOpenWorkbench = vi.fn();
+    render(
+      <IndustryGallery
+        onOpenLab={onOpenLab}
+        onOpenWorkbench={onOpenWorkbench}
+      />,
+    );
+    fireEvent.click(card("On-highway trucks and mobile power"));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByText(/Informational brief only/)).toBeNull();
+    expect(
+      within(dialog).getByText(/screens steady-state kW only/),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/does not model the truck or trailer/),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: /Open the Mobile-Site Power Planner/,
+      }),
+    );
+    expect(onOpenWorkbench).toHaveBeenCalledWith("#mobile-power-planner");
     expect(onOpenLab).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
