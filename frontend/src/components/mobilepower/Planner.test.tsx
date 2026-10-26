@@ -637,6 +637,19 @@ describe("Mobile-Site Power Planner: editing", () => {
   });
 });
 
+describe("Mobile-Site Power Planner: list semantics", () => {
+  it("keeps every load row inside a real list item", () => {
+    stubApi();
+    render(<Planner onBack={() => {}} />);
+    const items = within(
+      screen.getByRole("list", { name: "Loads" }),
+    ).getAllByRole("listitem");
+    expect(items).toHaveLength(5);
+    for (const item of items)
+      expect(within(item).getAllByRole("group")).toHaveLength(1);
+  });
+});
+
 describe("Mobile-Site Power Planner: errors", () => {
   it("blocks non-numeric text locally without calling the API, and clears the message on edit", () => {
     const fn = stubApi();

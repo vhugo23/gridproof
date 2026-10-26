@@ -74,7 +74,7 @@ export default function ApplicationDialog({
             />
           </div>
           <div className="flex flex-col p-5 md:p-6">
-            <p className="text-[11px] font-semibold tracking-widest text-gp-red uppercase">
+            <p className="text-[11px] font-semibold tracking-widest text-gp-red-text uppercase">
               Application brief
             </p>
             <h2
@@ -95,7 +95,7 @@ export default function ApplicationDialog({
             <ul className="mt-2 space-y-2 text-sm leading-snug text-gp-muted">
               {application.considerations.map((item) => (
                 <li key={item} className="flex gap-2">
-                  <span aria-hidden className="text-gp-red">
+                  <span aria-hidden className="text-gp-red-text">
                     ▸
                   </span>
                   <span>{item}</span>

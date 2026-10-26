@@ -470,7 +470,7 @@ export default function TestPlanWorkbench({ onBack }: { onBack: () => void }) {
             Inc.
           </p>
         </div>
-        <span className="rounded border border-gp-red/50 bg-gp-red/10 px-2 py-1 text-[11px] font-semibold tracking-widest text-gp-red uppercase">
+        <span className="rounded border border-gp-red/50 bg-gp-red/10 px-2 py-1 text-[11px] font-semibold tracking-widest text-gp-red-text uppercase">
           Synthetic
         </span>
       </div>
@@ -553,87 +553,88 @@ export default function TestPlanWorkbench({ onBack }: { onBack: () => void }) {
                   const p = `requirements.${i}`;
                   const prefix = `Requirement ${i + 1}`;
                   return (
-                    <li
-                      key={row.key}
-                      role="group"
-                      aria-label={prefix}
-                      className="grid grid-cols-2 gap-2 rounded-lg border border-gp-line bg-gp-bg/40 p-2.5 sm:grid-cols-4"
-                    >
-                      <TextInput
-                        className="col-span-2 sm:col-span-4"
-                        prefix={prefix}
-                        label="Label"
-                        inputMode="text"
-                        dataAttr={{ "data-req-label": row.key }}
-                        value={row.label}
-                        error={errorFor(`${p}.label`)}
-                        onChange={(v) => editReq(row.key, "label", v)}
-                      />
-                      <TextInput
-                        prefix={prefix}
-                        label="Speed min (rpm)"
-                        inputMode="numeric"
-                        value={row.rpmMin}
-                        error={errorFor(`${p}.rpm_min`)}
-                        onChange={(v) => editReq(row.key, "rpmMin", v)}
-                      />
-                      <TextInput
-                        prefix={prefix}
-                        label="Speed max (rpm)"
-                        inputMode="numeric"
-                        value={row.rpmMax}
-                        error={errorFor(`${p}.rpm_max`)}
-                        onChange={(v) => editReq(row.key, "rpmMax", v)}
-                      />
-                      <TextInput
-                        prefix={prefix}
-                        label="Torque min (N·m)"
-                        inputMode="decimal"
-                        value={row.torqueMin}
-                        error={errorFor(`${p}.torque_min_nm`)}
-                        onChange={(v) => editReq(row.key, "torqueMin", v)}
-                      />
-                      <TextInput
-                        prefix={prefix}
-                        label="Torque max (N·m)"
-                        inputMode="decimal"
-                        value={row.torqueMax}
-                        error={errorFor(`${p}.torque_max_nm`)}
-                        onChange={(v) => editReq(row.key, "torqueMax", v)}
-                      />
-                      <TextInput
-                        prefix={prefix}
-                        label="Min power (kW, optional)"
-                        inputMode="decimal"
-                        value={row.power}
-                        error={errorFor(`${p}.power_min_kw`)}
-                        onChange={(v) => editReq(row.key, "power", v)}
-                      />
-                      <TextInput
-                        prefix={prefix}
-                        label="Min planned entries"
-                        inputMode="numeric"
-                        value={row.minPoints}
-                        error={errorFor(`${p}.min_points`)}
-                        onChange={(v) => editReq(row.key, "minPoints", v)}
-                      />
-                      <TextInput
-                        prefix={prefix}
-                        label="Min planned hold (min)"
-                        inputMode="numeric"
-                        value={row.minDwell}
-                        error={errorFor(`${p}.min_dwell_min`)}
-                        onChange={(v) => editReq(row.key, "minDwell", v)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeReq(row.key)}
-                        disabled={reqs.length <= 1}
-                        aria-label={`Remove requirement ${i + 1}`}
-                        className="col-span-2 min-h-11 self-end rounded-md border border-gp-line-strong px-2.5 py-1.5 text-xs text-gp-muted enabled:hover:bg-gp-surface-2 enabled:hover:text-gp-text disabled:opacity-40 sm:col-span-1"
+                    <li key={row.key}>
+                      <div
+                        role="group"
+                        aria-label={prefix}
+                        className="grid grid-cols-2 gap-2 rounded-lg border border-gp-line bg-gp-bg/40 p-2.5 sm:grid-cols-4"
                       >
-                        Remove
-                      </button>
+                        <TextInput
+                          className="col-span-2 sm:col-span-4"
+                          prefix={prefix}
+                          label="Label"
+                          inputMode="text"
+                          dataAttr={{ "data-req-label": row.key }}
+                          value={row.label}
+                          error={errorFor(`${p}.label`)}
+                          onChange={(v) => editReq(row.key, "label", v)}
+                        />
+                        <TextInput
+                          prefix={prefix}
+                          label="Speed min (rpm)"
+                          inputMode="numeric"
+                          value={row.rpmMin}
+                          error={errorFor(`${p}.rpm_min`)}
+                          onChange={(v) => editReq(row.key, "rpmMin", v)}
+                        />
+                        <TextInput
+                          prefix={prefix}
+                          label="Speed max (rpm)"
+                          inputMode="numeric"
+                          value={row.rpmMax}
+                          error={errorFor(`${p}.rpm_max`)}
+                          onChange={(v) => editReq(row.key, "rpmMax", v)}
+                        />
+                        <TextInput
+                          prefix={prefix}
+                          label="Torque min (N·m)"
+                          inputMode="decimal"
+                          value={row.torqueMin}
+                          error={errorFor(`${p}.torque_min_nm`)}
+                          onChange={(v) => editReq(row.key, "torqueMin", v)}
+                        />
+                        <TextInput
+                          prefix={prefix}
+                          label="Torque max (N·m)"
+                          inputMode="decimal"
+                          value={row.torqueMax}
+                          error={errorFor(`${p}.torque_max_nm`)}
+                          onChange={(v) => editReq(row.key, "torqueMax", v)}
+                        />
+                        <TextInput
+                          prefix={prefix}
+                          label="Min power (kW, optional)"
+                          inputMode="decimal"
+                          value={row.power}
+                          error={errorFor(`${p}.power_min_kw`)}
+                          onChange={(v) => editReq(row.key, "power", v)}
+                        />
+                        <TextInput
+                          prefix={prefix}
+                          label="Min planned entries"
+                          inputMode="numeric"
+                          value={row.minPoints}
+                          error={errorFor(`${p}.min_points`)}
+                          onChange={(v) => editReq(row.key, "minPoints", v)}
+                        />
+                        <TextInput
+                          prefix={prefix}
+                          label="Min planned hold (min)"
+                          inputMode="numeric"
+                          value={row.minDwell}
+                          error={errorFor(`${p}.min_dwell_min`)}
+                          onChange={(v) => editReq(row.key, "minDwell", v)}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeReq(row.key)}
+                          disabled={reqs.length <= 1}
+                          aria-label={`Remove requirement ${i + 1}`}
+                          className="col-span-2 min-h-11 self-end rounded-md border border-gp-line-strong px-2.5 py-1.5 text-xs text-gp-muted enabled:hover:bg-gp-surface-2 enabled:hover:text-gp-text disabled:opacity-40 sm:col-span-1"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </li>
                   );
                 })}
@@ -674,76 +675,77 @@ export default function TestPlanWorkbench({ onBack }: { onBack: () => void }) {
                   const p = `points.${i}`;
                   const prefix = `Point ${i + 1}`;
                   return (
-                    <li
-                      key={row.key}
-                      role="group"
-                      aria-label={prefix}
-                      className="grid grid-cols-3 gap-2 rounded-lg border border-gp-line bg-gp-bg/40 p-2.5 sm:grid-cols-[minmax(0,1fr)_5.5rem_6rem_5rem] sm:items-start"
-                    >
-                      <TextInput
-                        className="col-span-3 sm:col-span-1"
-                        prefix={prefix}
-                        label="Label"
-                        inputMode="text"
-                        dataAttr={{ "data-point-label": row.key }}
-                        value={row.label}
-                        error={errorFor(`${p}.label`)}
-                        onChange={(v) => editPoint(row.key, "label", v)}
-                      />
-                      <TextInput
-                        prefix={prefix}
-                        label="Speed (rpm)"
-                        inputMode="numeric"
-                        value={row.rpm}
-                        error={errorFor(`${p}.rpm`)}
-                        onChange={(v) => editPoint(row.key, "rpm", v)}
-                      />
-                      <TextInput
-                        prefix={prefix}
-                        label="Torque (N·m)"
-                        inputMode="decimal"
-                        value={row.torque}
-                        error={errorFor(`${p}.torque_nm`)}
-                        onChange={(v) => editPoint(row.key, "torque", v)}
-                      />
-                      <TextInput
-                        prefix={prefix}
-                        label="Hold (min)"
-                        inputMode="numeric"
-                        value={row.dwell}
-                        error={errorFor(`${p}.dwell_min`)}
-                        onChange={(v) => editPoint(row.key, "dwell", v)}
-                      />
-                      <div className="col-span-3 flex flex-wrap gap-2 sm:col-span-4">
-                        <button
-                          type="button"
-                          data-move={`${row.key}-up`}
-                          onClick={() => movePoint(row.key, "up")}
-                          disabled={i === 0}
-                          aria-label={`Move point ${i + 1} up`}
-                          className="min-h-11 rounded-md border border-gp-line-strong px-2.5 py-1.5 text-xs text-gp-muted enabled:hover:bg-gp-surface-2 enabled:hover:text-gp-text disabled:opacity-40"
-                        >
-                          ↑ Move up
-                        </button>
-                        <button
-                          type="button"
-                          data-move={`${row.key}-down`}
-                          onClick={() => movePoint(row.key, "down")}
-                          disabled={i === points.length - 1}
-                          aria-label={`Move point ${i + 1} down`}
-                          className="min-h-11 rounded-md border border-gp-line-strong px-2.5 py-1.5 text-xs text-gp-muted enabled:hover:bg-gp-surface-2 enabled:hover:text-gp-text disabled:opacity-40"
-                        >
-                          ↓ Move down
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removePoint(row.key)}
-                          disabled={points.length <= 1}
-                          aria-label={`Remove point ${i + 1}`}
-                          className="min-h-11 rounded-md border border-gp-line-strong px-2.5 py-1.5 text-xs text-gp-muted enabled:hover:bg-gp-surface-2 enabled:hover:text-gp-text disabled:opacity-40"
-                        >
-                          Remove
-                        </button>
+                    <li key={row.key}>
+                      <div
+                        role="group"
+                        aria-label={prefix}
+                        className="grid grid-cols-3 gap-2 rounded-lg border border-gp-line bg-gp-bg/40 p-2.5 sm:grid-cols-[minmax(0,1fr)_5.5rem_6rem_5rem] sm:items-start"
+                      >
+                        <TextInput
+                          className="col-span-3 sm:col-span-1"
+                          prefix={prefix}
+                          label="Label"
+                          inputMode="text"
+                          dataAttr={{ "data-point-label": row.key }}
+                          value={row.label}
+                          error={errorFor(`${p}.label`)}
+                          onChange={(v) => editPoint(row.key, "label", v)}
+                        />
+                        <TextInput
+                          prefix={prefix}
+                          label="Speed (rpm)"
+                          inputMode="numeric"
+                          value={row.rpm}
+                          error={errorFor(`${p}.rpm`)}
+                          onChange={(v) => editPoint(row.key, "rpm", v)}
+                        />
+                        <TextInput
+                          prefix={prefix}
+                          label="Torque (N·m)"
+                          inputMode="decimal"
+                          value={row.torque}
+                          error={errorFor(`${p}.torque_nm`)}
+                          onChange={(v) => editPoint(row.key, "torque", v)}
+                        />
+                        <TextInput
+                          prefix={prefix}
+                          label="Hold (min)"
+                          inputMode="numeric"
+                          value={row.dwell}
+                          error={errorFor(`${p}.dwell_min`)}
+                          onChange={(v) => editPoint(row.key, "dwell", v)}
+                        />
+                        <div className="col-span-3 flex flex-wrap gap-2 sm:col-span-4">
+                          <button
+                            type="button"
+                            data-move={`${row.key}-up`}
+                            onClick={() => movePoint(row.key, "up")}
+                            disabled={i === 0}
+                            className="min-h-11 rounded-md border border-gp-line-strong px-2.5 py-1.5 text-xs text-gp-muted enabled:hover:bg-gp-surface-2 enabled:hover:text-gp-text disabled:opacity-40"
+                          >
+                            <span aria-hidden>↑</span> Move up{" "}
+                            <span className="sr-only">point {i + 1}</span>
+                          </button>
+                          <button
+                            type="button"
+                            data-move={`${row.key}-down`}
+                            onClick={() => movePoint(row.key, "down")}
+                            disabled={i === points.length - 1}
+                            className="min-h-11 rounded-md border border-gp-line-strong px-2.5 py-1.5 text-xs text-gp-muted enabled:hover:bg-gp-surface-2 enabled:hover:text-gp-text disabled:opacity-40"
+                          >
+                            <span aria-hidden>↓</span> Move down{" "}
+                            <span className="sr-only">point {i + 1}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removePoint(row.key)}
+                            disabled={points.length <= 1}
+                            aria-label={`Remove point ${i + 1}`}
+                            className="min-h-11 rounded-md border border-gp-line-strong px-2.5 py-1.5 text-xs text-gp-muted enabled:hover:bg-gp-surface-2 enabled:hover:text-gp-text disabled:opacity-40"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
                     </li>
                   );

@@ -27,7 +27,7 @@ export default function FacilityCard({
     >
       <p
         className={`text-[11px] font-semibold tracking-widest uppercase ${
-          interactive || experience ? "text-gp-red" : "text-gp-steel"
+          interactive || experience ? "text-gp-red-text" : "text-gp-steel"
         }`}
       >
         {interactive

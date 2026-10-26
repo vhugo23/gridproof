@@ -8,8 +8,10 @@
   --gp-line-strong: #3a3f48;
   --gp-text: #e8eaed;
   --gp-muted: #9aa1ac;
-  --gp-faint: #6b727d;
+  --gp-faint: #858c97;
   --gp-red: #d0312d;
+  /* Brand red is 3.6:1 on the dark surfaces; this lighter red is the text colour (>= 4.5:1). */
+  --gp-red-text: #ed5853;
   --gp-red-soft: #d0312d33;
   --gp-steel: #8f99a8;
   --gp-ok: #3ec28f;
@@ -27,6 +29,7 @@
   --color-gp-muted: var(--gp-muted);
   --color-gp-faint: var(--gp-faint);
   --color-gp-red: var(--gp-red);
+  --color-gp-red-text: var(--gp-red-text);
   --color-gp-steel: var(--gp-steel);
   --color-gp-ok: var(--gp-ok);
   --color-gp-warn: var(--gp-warn);
@@ -43,6 +46,11 @@ body {
   background: var(--gp-bg);
   color: var(--gp-text);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+summary {
+  /* A comfortable, larger click target for disclosure rows (WCAG 2.5.8). */
+  padding-block: 0.3rem;
 }
 
 :focus-visible {

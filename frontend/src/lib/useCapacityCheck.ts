@@ -7,7 +7,7 @@ import type { CapacityCheckEvidence, CapacityCheckRequest } from "./types";
 export type CapacityStatus = "idle" | "running" | "done" | "error";
 
 export type CapacityError = {
-  kind: "validation" | "forbidden" | "unavailable" | "other";
+  kind: "validation" | "forbidden" | "unavailable" | "server" | "other";
   message: string;
   /** Server field errors keyed by request field (for example "power_factor"). */
   fieldErrors: Record<string, string>;
@@ -36,6 +36,16 @@ function toError(error: unknown): CapacityError {
       kind: "forbidden",
       message:
         "The backend rejected this site's origin for the request (FRONTEND_ORIGINS does not include it).",
+      fieldErrors: {},
+    };
+  }
+  // The API answered with its own 500: it is reachable, so say that rather than
+  // "unavailable" (which is for network failures, 503 and gateway errors).
+  if (error.code === "INTERNAL_ERROR") {
+    return {
+      kind: "server",
+      message:
+        "The server hit an unexpected error. Nothing was changed; try again.",
       fieldErrors: {},
     };
   }

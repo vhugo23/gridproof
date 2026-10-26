@@ -467,7 +467,7 @@ describe("Engine Test-Plan Workbench: results", () => {
       target: { value: "1000" },
     });
     expect(screen.queryByTestId("stale-notice")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Move point 1 down" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move down point 1" }));
     expect(screen.getByTestId("stale-notice")).toBeInTheDocument();
   });
 });
@@ -528,30 +528,30 @@ describe("Engine Test-Plan Workbench: editing the plan", () => {
     render(<TestPlanWorkbench onBack={() => {}} />);
     expect(pointLabels()).toEqual(["Point A", "Point B", "Point C", "Point D"]);
     expect(
-      screen.getByRole("button", { name: "Move point 1 up" }),
+      screen.getByRole("button", { name: "Move up point 1" }),
     ).toBeDisabled();
     expect(
-      screen.getByRole("button", { name: "Move point 4 down" }),
+      screen.getByRole("button", { name: "Move down point 4" }),
     ).toBeDisabled();
 
-    fireEvent.click(screen.getByRole("button", { name: "Move point 2 up" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move up point 2" }));
     expect(pointLabels()).toEqual(["Point B", "Point A", "Point C", "Point D"]);
     // Focus follows the moved point (now position 1, so its up button is disabled
     // and focus falls to its down button).
     expect(
-      screen.getByRole("button", { name: "Move point 1 down" }),
+      screen.getByRole("button", { name: "Move down point 1" }),
     ).toHaveFocus();
     expect(
       screen.getByText("Point B moved to position 1 of 4."),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Move point 1 down" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move down point 1" }));
     expect(pointLabels()).toEqual(["Point A", "Point B", "Point C", "Point D"]);
     expect(
-      screen.getByRole("button", { name: "Move point 2 down" }),
+      screen.getByRole("button", { name: "Move down point 2" }),
     ).toHaveFocus();
 
-    fireEvent.click(screen.getByRole("button", { name: "Move point 4 up" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move up point 4" }));
     check();
     await done();
     expect(bodyOf(fn).points.map((p: { label: string }) => p.label)).toEqual([
@@ -688,6 +688,45 @@ describe("Engine Test-Plan Workbench: errors", () => {
     await done();
     expect(fn).toHaveBeenCalledTimes(2);
     expect(bodyOf(fn, 1)).toEqual(bodyOf(fn, 0));
+  });
+
+  it("says the server hit an error, not that the API is unavailable, on a 500", async () => {
+    stubApi(apiError(500, "INTERNAL_ERROR"));
+    render(<TestPlanWorkbench onBack={() => {}} />);
+    check();
+    expect(
+      await screen.findByText(/The server hit an unexpected error/),
+    ).toBeVisible();
+    expect(screen.queryByText(/The GridProof API is unavailable/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+  });
+
+  it("keeps each point and requirement row inside a real list item", () => {
+    stubApi();
+    render(<TestPlanWorkbench onBack={() => {}} />);
+    for (const [name, groups] of [
+      ["Operating point list", 4],
+      ["Requirement list", 4],
+    ] as const) {
+      const items = within(screen.getByRole("list", { name })).getAllByRole(
+        "listitem",
+      );
+      expect(items).toHaveLength(groups);
+      for (const item of items)
+        expect(within(item).getAllByRole("group")).toHaveLength(1);
+    }
+  });
+
+  it("gives the reorder buttons their visible text plus the point they act on", () => {
+    stubApi();
+    render(<TestPlanWorkbench onBack={() => {}} />);
+    const up = screen.getByRole("button", { name: "Move up point 2" });
+    const down = screen.getByRole("button", { name: "Move down point 2" });
+    // The accessible name starts with the visible words, so voice control works.
+    expect(up).toHaveTextContent(/Move up/);
+    expect(down).toHaveTextContent(/Move down/);
+    expect(up.getAttribute("aria-label")).toBeNull();
+    expect(down.getAttribute("aria-label")).toBeNull();
   });
 
   it("announces the outcome in a polite status region", async () => {

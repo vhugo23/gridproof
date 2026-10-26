@@ -560,3 +560,172 @@ describe("map -> Seymour synthetic engine test-plan workbench", () => {
     }
   });
 });
+
+describe("map selection versus explicit lab entry", () => {
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 60));
+  const sessionCalls = (fn: ReturnType<typeof stubApi>) =>
+    fn.mock.calls.filter(([u]) => /session|configurations/.test(String(u)));
+
+  it("selecting the Fridley marker by pointer only shows its card: no lab, no session", async () => {
+    const fn = stubApi();
+    render(<AppShell />);
+    fireEvent.click(await screen.findByRole("button", { name: /Seymour — / }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Fridley — interactive virtual lab/ }),
+    );
+    await flush();
+    expect(window.location.hash).toBe("");
+    expect(
+      screen.getByRole("heading", { name: "Explore Power Integration" }),
+    ).toBeInTheDocument();
+    const card = screen.getByRole("complementary", {
+      name: /Fridley site details/,
+    });
+    expect(
+      within(card).getByRole("button", { name: /Enter Virtual Lab/ }),
+    ).toBeInTheDocument();
+    expect(sessionCalls(fn)).toHaveLength(0);
+  });
+
+  it("selecting the Fridley marker by keyboard (Enter and Space) does not enter the lab either", async () => {
+    const fn = stubApi();
+    render(<AppShell />);
+    fireEvent.click(await screen.findByRole("button", { name: /Daventry — / }));
+    const marker = screen.getByRole("button", {
+      name: /Fridley — interactive virtual lab/,
+    });
+    marker.focus();
+    fireEvent.keyDown(marker, { key: "Enter" });
+    await flush();
+    expect(window.location.hash).toBe("");
+    expect(
+      screen.getByRole("complementary", { name: /Fridley site details/ }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Seymour — / }));
+    fireEvent.keyDown(marker, { key: " " });
+    await flush();
+    expect(window.location.hash).toBe("");
+    expect(sessionCalls(fn)).toHaveLength(0);
+  });
+
+  it("tabbing across the other markers does not swap the selected card away, so its button stays reachable", async () => {
+    stubApi();
+    render(<AppShell />);
+    fireEvent.click(await screen.findByRole("button", { name: /Seymour — / }));
+    const fridley = screen.getByRole("button", {
+      name: /Fridley — interactive virtual lab/,
+    });
+    fireEvent.keyDown(fridley, { key: "Enter" });
+    expect(
+      screen.getByRole("complementary", { name: /Fridley site details/ }),
+    ).toBeInTheDocument();
+    for (const name of [/Seymour — /, /Daventry — /]) {
+      const other = screen.getByRole("button", { name });
+      other.focus();
+      fireEvent.focus(other);
+    }
+    const card = screen.getByRole("complementary", {
+      name: /Fridley site details/,
+    });
+    expect(
+      within(card).getByRole("button", { name: /Enter Virtual Lab/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("only the card's Enter Virtual Lab action opens the lab and starts the session", async () => {
+    const fn = stubApi();
+    render(<AppShell />);
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: /Fridley — interactive virtual lab/,
+      }),
+    );
+    await flush();
+    expect(sessionCalls(fn)).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: /Enter Virtual Lab/ }));
+    await waitFor(() => expect(window.location.hash).toBe("#fridley-lab"));
+    expect(
+      await screen.findByRole("heading", {
+        name: "Fridley Virtual Power Integration Lab",
+      }),
+    ).toBeInTheDocument();
+    expect(sessionCalls(fn).length).toBeGreaterThan(0);
+  });
+
+  it("still opens the lab from its address", async () => {
+    window.location.hash = "#fridley-lab";
+    stubApi();
+    render(<AppShell />);
+    expect(
+      await screen.findByRole("heading", {
+        name: "Fridley Virtual Power Integration Lab",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers a facility picker that shows a card without any session call", async () => {
+    const fn = stubApi();
+    render(<AppShell />);
+    const group = await screen.findByRole("group", {
+      name: "Choose a facility",
+    });
+    const seymour = within(group).getByRole("radio", { name: /Seymour, IN/ });
+    expect(within(group).getAllByRole("radio")).toHaveLength(3);
+    expect(
+      within(group).getByRole("radio", { name: /Fridley, MN/ }),
+    ).toBeChecked();
+    fireEvent.click(seymour);
+    expect(seymour).toBeChecked();
+    expect(
+      screen.getByRole("complementary", { name: /Seymour site details/ }),
+    ).toBeInTheDocument();
+    fireEvent.click(within(group).getByRole("radio", { name: /Fridley, MN/ }));
+    await flush();
+    expect(window.location.hash).toBe("");
+    expect(sessionCalls(fn)).toHaveLength(0);
+  });
+});
+
+describe("landing page: the five experiences", () => {
+  it("lists all five with links that reuse the existing hash routes", async () => {
+    stubApi();
+    render(<AppShell />);
+    const section = await screen.findByRole("region", {
+      name: "Five hands-on experiences",
+    });
+    const links = within(section).getAllByRole("link");
+    expect(links.map((a) => a.getAttribute("href"))).toEqual([
+      "#fridley-lab",
+      "#seymour-test-plan",
+      "#daventry-workbench",
+      "#mining-duty-cycle",
+      "#mobile-power-planner",
+    ]);
+    expect(within(section).getAllByRole("listitem")).toHaveLength(5);
+    expect(section).toHaveTextContent(
+      /Interactive lab · saves a demo workspace/,
+    );
+    expect(section).toHaveTextContent(
+      /synthetic and independent of Cummins Inc\./,
+    );
+  });
+
+  it("opens Mining and Mobile Power directly from the landing links", async () => {
+    stubApi();
+    render(<AppShell />);
+    const section = await screen.findByRole("region", {
+      name: "Five hands-on experiences",
+    });
+    fireEvent.click(
+      within(section).getByRole("link", {
+        name: /Open the duty-cycle analyzer/,
+      }),
+    );
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Mining Duty-Cycle Energy Analyzer",
+      }),
+    ).toBeInTheDocument();
+  });
+});

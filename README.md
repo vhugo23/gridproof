@@ -1,198 +1,165 @@
-
 # GridProof
 
 ### Virtual Power Integration & Commissioning Workbench
 
-**An independent, Cummins-inspired engineering platform for testing integrated power systems against operational and failure-response requirements.**
+**An independent, Cummins-inspired engineering project: five hands-on, synthetic-data workbenches for exploring power-system integration and engine test planning.**
 
-GridProof is a full-stack software engineering project inspired by Cummins Power Systems and its Power Integration Center (PIC) in Fridley, Minnesota.
+**Live demo: https://gridproof-seven.vercel.app**
 
-The platform is designed to let engineers configure representative power systems, simulate equipment failures, validate acceptance criteria, and generate traceable engineering evidence before physical commissioning.
+GridProof is a full-stack student engineering project inspired by publicly available information about Cummins Inc. It opens on a map of three public Cummins sites (Fridley, Minnesota; Seymour, Indiana; Daventry, United Kingdom) and offers five interactive experiences. Every number in them is synthetic: the equipment, configurations, packages, scenarios and sample values are invented for the exercises.
 
-> **Project status:** Active development. The application foundation, database connectivity, migrations, automated tests, and CI are established. The simulation and interactive engineering workbench are under development.
+> **Independent and synthetic.** GridProof is not affiliated with, sponsored by, endorsed by or operated by Cummins Inc., and it is not the software, procedures or data of any Cummins site. It contains no real Cummins operational data, product specifications or measurements. Nothing it produces is certified analysis, a performance result or a product selection.
 
-## The Problem
+## The five workbenches
 
-Modern critical-power installations integrate multiple subsystems, including generators, battery energy storage, switchgear, controls, and electrical loads.
+| Experience | Open from | What you do | Backend | Saved? |
+|---|---|---|---|---|
+| **Fridley virtual lab** | Fridley card, then **Enter Virtual Lab** (`#fridley-lab`) | Inspect a 2.5D power system (utility, two generators, battery, switchgear, critical load), change the G1 startup delay and battery settings, save a new configuration version, run a utility-outage startup test and compare the baseline (v1) with your latest version: requirement outcomes, event timeline and frame-by-frame playback. | Sessions, configurations, `startup-check` | Yes: an anonymous demo workspace |
+| **Seymour engine test-plan workbench** | Seymour card (`#seymour-test-plan`) | Define an objective, speed/torque requirement regions and an ordered list of operating points; see theoretical shaft power, which requirements the plan covers, a traceability matrix, planned hold timeline and an evidence checklist. **Planning coverage only: the verification status is always `not_verified`.** | `engine-test-plan` | No |
+| **Daventry capacity screening** | Daventry card (`#daventry-workbench`) | Screen a customer load (kW, power factor, margin) against four invented generator packages for real and apparent power. | `capacity-check` | No |
+| **Mining duty-cycle analyzer** | Mining brief in *Industry Applications* (`#mining-duty-cycle`) | Enter power and duration segments and a cycle count; get energy per segment, per cycle and per shift. | `duty-cycle` | No |
+| **Mobile-site power planner** | On-highway brief in *Industry Applications* (`#mobile-power-planner`) | List a temporary site's electrical loads with simultaneity factors; compare modeled demand with four invented packages. | `mobile-power` | No |
 
-These systems must behave predictably during utility outages, generator failures, switching problems, and changing load conditions.
+All five can also be opened from the "Five hands-on experiences" strip on the landing page, or directly by address. The Industry Applications gallery also holds short, illustrative briefs and two guided challenges that start in the Fridley lab.
 
-Preparing and evaluating integration tests requires coordinating equipment configurations, operating sequences, customer requirements, and test evidence.
+The calculations run on the backend and the browser shows what the backend returns; nothing is recomputed in the UI. Each result lists its assumptions and what it does not model.
 
-**GridProof explores how software can make preliminary integration testing more repeatable, explainable, and traceable.**
+## What GridProof is not
 
-It is an independent engineering prototype, not a replacement for Cummins' existing testing infrastructure.
-
-## Planned Core Features
-
-- **Geographic Facility Explorer:** Map-based navigation featuring verified Cummins facility context, with a Fridley-inspired virtual integration lab.
-- **Interactive Equipment Visualization:** A 2.5D power-system layout and focused 3D equipment inspection.
-- **System Configuration:** Editable generator, battery, switchgear, and load parameters with immutable configuration history.
-- **Deterministic Failure Simulation:** Reproducible utility outages, generator startup failures, breaker faults, battery depletion, and load disturbances.
-- **Requirements-Based Validation:** Automated pass/fail assertions supported by timestamped simulation evidence.
-- **Simulation Replay & Comparison:** Compare configurations and inspect the sequence of events behind test outcomes.
-- **Engineering Reports:** Export PDF reports from saved simulation evidence.
-- **AI-Assisted Test Authoring:** Optional Gemini integration that converts natural-language requests into structured test drafts requiring validation and user approval.
-
-The core simulator is designed to function without AI API access.
-
-## Technology Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 16, React 19, TypeScript |
-| Styling | Tailwind CSS |
-| Backend | Python 3.12, FastAPI |
-| Database | PostgreSQL (Neon) |
-| ORM & Migrations | SQLAlchemy 2, Alembic |
-| Mapping (planned) | MapLibre GL JS |
-| Visualization (planned) | React Three Fiber, 2.5D equipment assets |
-| AI (planned) | Gemini API |
-| Backend Testing | pytest, Ruff |
-| Frontend Testing | Vitest, React Testing Library |
-| Formatting | Prettier, Ruff |
-| CI | GitHub Actions |
-| Deployment (planned) | Vercel, Render, Neon |
+- Not Cummins software, and not validated against any real equipment, plant, test cell or procedure.
+- Not a certified electrical or engine analysis, a sizing or compliance tool, or a product-selection tool.
+- Not a live view of any facility: the map shows approximate city-level locations with sourced public descriptions only.
+- Not a general simulator. The Fridley lab runs one fixed, simplified utility-outage startup scenario (G1 readiness against a 10 s limit and critical-load continuity), documented in `docs/09-known-limitations.md`.
+- Not implemented: PDF reports, 3D equipment viewing, a geographic tile map, AI-assisted test authoring, user accounts, or saving anything beyond the Fridley demo workspace.
 
 ## Architecture
 
-The application uses a modular-monolith backend and API-first communication.
-
 ```text
-Next.js Frontend
-       |
-       | REST API
-       v
-FastAPI Backend
-       |
-       +-- Configuration & Validation
-       |
-       +-- Simulation Engine (planned)
-       |
-       +-- Reporting (planned)
-       |
-       +-- Optional Gemini Integration (planned)
-       |
-       v
-PostgreSQL (Neon)
+Browser
+   |
+   v
+Next.js 16 / React 19 frontend  (Vercel)
+   |  same-origin /api/v1/* rewrite
+   v
+FastAPI backend  (Render)
+   |-- stateless calculation endpoints (no session, no database)
+   |-- anonymous demo workspace, configurations and versions
+   v
+PostgreSQL  (Neon)
 ```
 
-The database stores configurations and their versions, scenario definitions, and eventually immutable simulation evidence.
+- **Stateless demo APIs.** `startup-check`, `capacity-check`, `duty-cycle`, `mobile-power` and `engine-test-plan` are pure, deterministic calculations. The last four need no cookie and no database. `startup-check` runs on a saved Fridley configuration version and so needs the demo session.
+- **Anonymous workspace.** Entering the Fridley lab calls `GET /api/v1/session`, which creates a workspace with a fixed 7-day expiry and an `HttpOnly` cookie, and seeds a baseline configuration (v1). Saves create immutable new versions with optimistic concurrency. The first lab entry shows one `401` in the network log: the client tries to read the current configuration, and only on that expected 401 starts the session (documented in `docs/05-api-contracts.md`).
+- **Facility catalog.** Three public sites, seeded into the database and returned by `GET /api/v1/facilities`.
+- **Hash routing.** The workbenches are client-side views selected by the URL hash, so each has a shareable address and works with the browser's Back and Forward buttons.
+- **Exact arithmetic.** The Daventry, Mining, Mobile Power and Seymour models use exact fractions or high-precision decimals and compare unrounded values; displayed numbers are rounded.
 
-The physical visualization, engineering diagram, and simulation results will use the same authoritative simulation state.
+## Technology
 
-## Project Structure
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, hand-built SVG for the map, lab and charts |
+| Backend | Python 3.12, FastAPI, Pydantic 2 |
+| Database | PostgreSQL (Neon), SQLAlchemy 2, Alembic migrations (001, 002), psycopg 3 |
+| Testing | pytest (including isolated PostgreSQL integration tests), Vitest, React Testing Library |
+| Quality | Ruff (backend), ESLint, Prettier, TypeScript strict checks |
+| CI | GitHub Actions: Backend Checks and Frontend Checks on every push and pull request to `main` |
+| Hosting | Vercel (frontend), Render (backend), Neon (database) |
+
+## API endpoints
+
+All paths are under `/api/v1`. The full contracts, validation bounds and error envelope are in [`docs/05-api-contracts.md`](docs/05-api-contracts.md); interactive docs are at `/docs` on a running backend.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /health`, `GET /health/database` | Liveness and database connectivity |
+| `GET /facilities` | Facility catalog (three public sites) |
+| `GET /session` | Create or reuse the anonymous demo workspace |
+| `GET /configurations/current` | Current Fridley configuration for the session's workspace |
+| `POST /configurations/{id}/versions` | Save a new immutable configuration version |
+| `POST /demo/startup-check` | Fridley utility-outage startup test (API-16) |
+| `POST /demo/capacity-check` | Daventry capacity screening (API-17) |
+| `POST /demo/duty-cycle` | Mining duty-cycle energy analysis (API-18) |
+| `POST /demo/mobile-power` | Mobile-site power planner (API-19) |
+| `POST /demo/engine-test-plan` | Seymour engine test-plan coverage (API-20) |
+
+## Repository layout
 
 ```text
 gridproof/
-├── frontend/              # Next.js application
+├── frontend/                    # Next.js application
+│   └── src/
+│       ├── app/                 # Next.js entry and global styles
+│       ├── components/          # map, landing, lab, inspector, compare, challenges,
+│       │                        #   daventry, mining, mobilepower, seymour, gallery
+│       ├── lib/                 # API client, types, hooks, projection, recorded demo
+│       └── test/                # shared test fixtures and setup
 ├── backend/
 │   ├── app/
-│   │   ├── core/          # Application settings
-│   │   ├── db/            # SQLAlchemy models and sessions
-│   │   └── main.py        # FastAPI entry point
-│   ├── migrations/        # Alembic migration history
-│   ├── tests/             # Backend tests
-│   └── requirements.txt
-├── assets/                # Future licensed equipment assets
-├── docs/                  # Product and architecture specifications
-├── tests/                 # Future cross-component tests
-└── .github/workflows/     # GitHub Actions CI
+│   │   ├── core/                # settings, errors, Origin allowlist
+│   │   ├── db/                  # SQLAlchemy models and sessions
+│   │   ├── domain/              # pure calculation models and validation
+│   │   ├── routes/              # FastAPI routers
+│   │   ├── services/            # sessions, workspaces, configurations, startup check
+│   │   ├── seed/                # facility catalog seed
+│   │   └── main.py              # FastAPI entry point
+│   ├── migrations/              # Alembic migration history
+│   └── tests/                   # unit, API and PostgreSQL integration tests
+├── docs/                        # specifications, decisions, status and limitations
+└── .github/workflows/           # CI
 ```
 
-## Local Development
+## Local development
 
 ### Prerequisites
 
-- Node.js 24
-- Python 3.12
-- npm
-- PostgreSQL database (Neon recommended)
-- Git
+Node.js 24, npm, Python 3.12, Git, a PostgreSQL database (a local Docker database is fine; Neon works too) and Docker if you want to run the integration tests.
 
-### 1. Clone the Repository
+### 1. Backend
 
-```bash
-git clone https://github.com/vhugo23/gridproof.git
-cd gridproof
-```
-
-### 2. Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open http://localhost:3000.
-
-### 3. Backend Setup
-
-From the repository root:
+From `backend/`:
 
 ```powershell
-cd backend
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 ```
 
-Copy `backend/.env.example` to `backend/.env` and configure:
+On macOS or Linux use `python3.12 -m venv .venv` and `source .venv/bin/activate`.
+
+Copy `backend/.env.example` to `backend/.env` and set your own database URL (never commit it):
 
 ```dotenv
 DATABASE_URL=postgresql://USER:PASSWORD@HOST/gridproof?sslmode=require
+# Browser origins allowed to POST to the API (comma separated). Needed for local use:
+FRONTEND_ORIGINS=http://localhost:3000
 ```
 
-Replace the placeholders with your own database credentials.
-
-Start FastAPI:
+Create the schema with Alembic (do not create tables by hand), seed the facility catalog, and start the API:
 
 ```powershell
+python -m alembic upgrade head
+python -m app.seed.facilities            # dry run: shows what would be written
+python -m app.seed.facilities --apply    # writes the three facility rows
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-API documentation: http://localhost:8000/docs
+The seed refuses a non-loopback database unless you pass `--confirm-host <exact host>`. API docs: http://localhost:8000/docs. Health: http://localhost:8000/api/v1/health and http://localhost:8000/api/v1/health/database.
 
-### 4. Database Migrations
+### 2. Frontend
 
-From `backend/` with the virtual environment activated:
+From `frontend/`:
 
 ```bash
-python -m alembic upgrade head
-python -m alembic current
+npm install
+npm run dev
 ```
 
-Do not manually create the application tables; use Alembic migrations.
+Open http://localhost:3000. The dev server forwards `/api/v1/*` to `http://127.0.0.1:8000`; set `API_PROXY_TARGET` to point it elsewhere.
 
-### 5. Verify Connectivity
+## Testing and code quality
 
-Frontend-proxied API health check:
-
-http://localhost:3000/api/v1/health
-
-Backend health check:
-
-http://localhost:8000/api/v1/health
-
-Database health check:
-
-http://localhost:8000/api/v1/health/database
-
-A successful database response is:
-
-```json
-{
-  "status": "connected",
-  "database": "postgresql"
-}
-```
-
-## Testing and Code Quality
-
-### Frontend
-
-Run from `frontend/`:
+### Frontend (from `frontend/`)
 
 ```bash
 npm run format:check
@@ -200,41 +167,28 @@ npm run lint
 npm run typecheck
 npm run test
 npm run build
-npm audit --omit=dev
 ```
 
-### Backend
-
-Run from `backend/`:
+### Backend (from `backend/`)
 
 ```bash
-python -m ruff format --check app tests
-python -m ruff check app tests
+python -m ruff format --check app tests migrations/env.py
+python -m ruff check app tests migrations/env.py
 python -m pytest -q
 ```
 
-### Continuous Integration
+The PostgreSQL integration tests need an isolated database. Start the disposable one and point the tests at it (it is for tests only; never use real data):
 
-GitHub Actions runs frontend and backend checks on pushes and pull requests targeting `main`.
+```bash
+docker compose -f docker-compose.test.yml up -d --wait
+export DATABASE_URL=postgresql://gridproof:dummy@localhost:55432/gridproof
+export TEST_DATABASE_URL=postgresql://gridproof:gridproof_test@127.0.0.1:55432/gridproof_test
+export GRIDPROOF_REQUIRE_TEST_DB=1      # fail instead of skipping if the database is missing
+python -m pytest -q
+docker compose -f docker-compose.test.yml down -v
+```
 
-The current CI installation uses `npm install` while cross-platform lockfile consistency is being resolved. Restoring `npm ci` is a planned tooling improvement.
-
-## Implementation Progress
-
-| Milestone | Status |
-|---|---|
-| Product requirements and architecture | Complete |
-| Frontend and backend initialization | Complete |
-| Frontend-to-backend API communication | Complete |
-| Neon PostgreSQL connection | Complete |
-| Database migrations 001 and 002 | Complete |
-| Frontend and backend unit-test setup | Complete |
-| GitHub Actions CI | Operational |
-| Anonymous workspace sessions | Planned |
-| Persistent configuration versioning API | Planned |
-| Facility map and physical equipment UI | Planned |
-| Deterministic simulation engine | Planned |
-| Evidence reports and AI test drafting | Planned |
+CI runs the same checks. The testing strategy and the observed results of each release are in [`docs/07-testing-strategy.md`](docs/07-testing-strategy.md).
 
 ## Documentation
 
@@ -250,14 +204,14 @@ The current CI installation uses `npm install` while cross-platform lockfile con
 - [Implementation Roadmap](docs/10-implementation-roadmap.md)
 - [Project Status](docs/PROJECT-STATUS.md)
 
-## Security and Limitations
+## Limitations and responsible use
 
-- Database credentials and API keys are never committed to Git.
-- User inputs will be validated on the backend.
-- Workspace data will be isolated through server-managed sessions.
-- Historical simulation evidence will be preserved through immutable records.
-- Operational datasets and equipment configurations are synthetic.
-- The simulator will not provide certified electrical analyses or control real equipment.
+- Operational datasets and equipment configurations are synthetic. Facility descriptions come from public sources, and map markers are approximate city locations.
+- The simulator and calculators are deliberately simple, state their assumptions, and are not validated against real equipment. Each workbench lists what it does not model (see `docs/09-known-limitations.md`).
+- The Seymour workbench reports planning coverage only. A covered requirement does not show that an engine can operate at that point, and GridProof holds no measurements.
+- Inputs are validated on the backend; secrets and credentials are never committed.
+- The Fridley demo workspace is anonymous, holds only synthetic configuration data, and expires after 7 days.
+- Browser support has been checked in headless Chromium only. Safari, Firefox and real touch devices have not been tested.
 
 ## Disclaimer
 

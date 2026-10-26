@@ -20,7 +20,7 @@ function Badge({ editable }: { editable: boolean }) {
     <span
       className={`rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wider uppercase ${
         editable
-          ? "bg-gp-red/20 text-gp-red ring-1 ring-gp-red/40"
+          ? "bg-gp-red/20 text-gp-red-text ring-1 ring-gp-red/40"
           : "bg-gp-surface-2 text-gp-faint ring-1 ring-gp-line"
       }`}
     >
@@ -339,7 +339,9 @@ export function SavePanel({
                   ? "Session expired"
                   : issue.kind === "unavailable"
                     ? "API unavailable"
-                    : "Save failed"}
+                    : issue.kind === "server"
+                      ? "Server error"
+                      : "Save failed"}
           </p>
           <p className="mt-1 text-gp-muted">
             {issue.kind === "validation"
@@ -368,7 +370,7 @@ export function SavePanel({
                 Start new session (keep edits)
               </button>
             )}
-            {issue.kind === "unavailable" && (
+            {(issue.kind === "unavailable" || issue.kind === "server") && (
               <button
                 type="button"
                 onClick={onSave}

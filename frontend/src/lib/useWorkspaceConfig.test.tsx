@@ -152,6 +152,22 @@ describe("useWorkspaceConfig", () => {
     expect(result.current.draft?.equipment.g1.startup_delay_s).toBe(15);
   });
 
+  it("tells an API 500 apart from an outage and keeps the draft", async () => {
+    stubRoutes((_url, init) =>
+      init?.method === "POST"
+        ? apiError(500, "INTERNAL_ERROR")
+        : json(200, current()),
+    );
+    const { result } = renderHook(() => useWorkspaceConfig(true));
+    await waitFor(() => expect(result.current.phase).toBe("ready"));
+    act(() => result.current.updateDraft(setG1Delay(15)));
+    await act(() => result.current.save());
+    expect(result.current.issue?.kind).toBe("server");
+    expect(result.current.issue?.message).toMatch(/unexpected error/);
+    expect(result.current.issue?.message).not.toMatch(/unavailable/);
+    expect(result.current.draft?.equipment.g1.startup_delay_s).toBe(15);
+  });
+
   it("reports a load failure with a retry path", async () => {
     stubRoutes(() => apiError(503, "CATALOG_UNAVAILABLE"));
     const { result } = renderHook(() => useWorkspaceConfig(true));

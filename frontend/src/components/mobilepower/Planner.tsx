@@ -193,7 +193,7 @@ function Contribution({ result }: { result: MobilePowerEvidence }) {
                   />
                   <span className="font-medium text-gp-text">{l.name}</span>
                   {dominant.has(l.id) && (
-                    <span className="rounded bg-gp-red/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-gp-red uppercase ring-1 ring-gp-red/40">
+                    <span className="rounded bg-gp-red/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-gp-red-text uppercase ring-1 ring-gp-red/40">
                       Largest demand
                     </span>
                   )}
@@ -567,7 +567,7 @@ export default function Planner({ onBack }: { onBack: () => void }) {
             Inc.
           </p>
         </div>
-        <span className="rounded border border-gp-red/50 bg-gp-red/10 px-2 py-1 text-[11px] font-semibold tracking-widest text-gp-red uppercase">
+        <span className="rounded border border-gp-red/50 bg-gp-red/10 px-2 py-1 text-[11px] font-semibold tracking-widest text-gp-red-text uppercase">
           Synthetic
         </span>
       </div>
@@ -628,55 +628,56 @@ export default function Planner({ onBack }: { onBack: () => void }) {
 
             <ul className="space-y-2" aria-label="Loads">
               {rows.map((row, i) => (
-                <li
-                  key={row.key}
-                  role="group"
-                  aria-label={`Load ${i + 1}`}
-                  className="grid grid-cols-3 gap-2 rounded-lg border border-gp-line bg-gp-bg/40 p-2.5 sm:grid-cols-[minmax(0,1fr)_4.5rem_5.5rem_5.5rem_auto] sm:items-start"
-                >
-                  <RowInput
-                    className="col-span-3 sm:col-span-1"
-                    prefix={`Load ${i + 1}`}
-                    label="Name"
-                    inputMode="text"
-                    dataName={row.key}
-                    value={row.name}
-                    error={errorFor(`loads.${i}.name`)}
-                    onChange={(v) => editRow(row.key, "name", v)}
-                  />
-                  <RowInput
-                    prefix={`Load ${i + 1}`}
-                    label="Quantity"
-                    inputMode="numeric"
-                    value={row.qty}
-                    error={errorFor(`loads.${i}.quantity`)}
-                    onChange={(v) => editRow(row.key, "qty", v)}
-                  />
-                  <RowInput
-                    prefix={`Load ${i + 1}`}
-                    label="Rated (kW)"
-                    inputMode="decimal"
-                    value={row.kw}
-                    error={errorFor(`loads.${i}.rated_kw`)}
-                    onChange={(v) => editRow(row.key, "kw", v)}
-                  />
-                  <RowInput
-                    prefix={`Load ${i + 1}`}
-                    label="Simultaneity"
-                    inputMode="decimal"
-                    value={row.sim}
-                    error={errorFor(`loads.${i}.simultaneity_factor`)}
-                    onChange={(v) => editRow(row.key, "sim", v)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeRow(row.key)}
-                    disabled={rows.length <= 1}
-                    aria-label={`Remove load ${i + 1}`}
-                    className="col-span-3 min-h-11 rounded-md border border-gp-line-strong px-2.5 py-1.5 text-xs text-gp-muted enabled:hover:bg-gp-surface-2 enabled:hover:text-gp-text disabled:opacity-40 sm:col-span-1 sm:mt-[18px]"
+                <li key={row.key}>
+                  <div
+                    role="group"
+                    aria-label={`Load ${i + 1}`}
+                    className="grid grid-cols-3 gap-2 rounded-lg border border-gp-line bg-gp-bg/40 p-2.5 sm:grid-cols-[minmax(0,1fr)_4.5rem_5.5rem_5.5rem_auto] sm:items-start"
                   >
-                    Remove
-                  </button>
+                    <RowInput
+                      className="col-span-3 sm:col-span-1"
+                      prefix={`Load ${i + 1}`}
+                      label="Name"
+                      inputMode="text"
+                      dataName={row.key}
+                      value={row.name}
+                      error={errorFor(`loads.${i}.name`)}
+                      onChange={(v) => editRow(row.key, "name", v)}
+                    />
+                    <RowInput
+                      prefix={`Load ${i + 1}`}
+                      label="Quantity"
+                      inputMode="numeric"
+                      value={row.qty}
+                      error={errorFor(`loads.${i}.quantity`)}
+                      onChange={(v) => editRow(row.key, "qty", v)}
+                    />
+                    <RowInput
+                      prefix={`Load ${i + 1}`}
+                      label="Rated (kW)"
+                      inputMode="decimal"
+                      value={row.kw}
+                      error={errorFor(`loads.${i}.rated_kw`)}
+                      onChange={(v) => editRow(row.key, "kw", v)}
+                    />
+                    <RowInput
+                      prefix={`Load ${i + 1}`}
+                      label="Simultaneity"
+                      inputMode="decimal"
+                      value={row.sim}
+                      error={errorFor(`loads.${i}.simultaneity_factor`)}
+                      onChange={(v) => editRow(row.key, "sim", v)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeRow(row.key)}
+                      disabled={rows.length <= 1}
+                      aria-label={`Remove load ${i + 1}`}
+                      className="col-span-3 min-h-11 rounded-md border border-gp-line-strong px-2.5 py-1.5 text-xs text-gp-muted enabled:hover:bg-gp-surface-2 enabled:hover:text-gp-text disabled:opacity-40 sm:col-span-1 sm:mt-[18px]"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

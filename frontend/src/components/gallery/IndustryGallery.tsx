@@ -67,7 +67,7 @@ export default function IndustryGallery({
                 <span className="mt-1 block text-[11px] leading-snug text-gp-muted">
                   {app.caption}
                 </span>
-                <span className="mt-2 block text-[11px] font-semibold tracking-wider text-gp-red uppercase transition group-hover:translate-x-0.5">
+                <span className="mt-2 block text-[11px] font-semibold tracking-wider text-gp-red-text uppercase transition group-hover:translate-x-0.5">
                   View brief →
                 </span>
               </span>

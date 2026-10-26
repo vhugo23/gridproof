@@ -154,7 +154,7 @@ function Breakdown({ result }: { result: DutyCycleEvidence }) {
                   />
                   <span className="font-medium text-gp-text">{s.name}</span>
                   {dominant.has(s.id) && (
-                    <span className="rounded bg-gp-red/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-gp-red uppercase ring-1 ring-gp-red/40">
+                    <span className="rounded bg-gp-red/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-gp-red-text uppercase ring-1 ring-gp-red/40">
                       Most energy
                     </span>
                   )}
@@ -369,7 +369,7 @@ export default function DutyCycleWorkbench({ onBack }: { onBack: () => void }) {
             Inc.
           </p>
         </div>
-        <span className="rounded border border-gp-red/50 bg-gp-red/10 px-2 py-1 text-[11px] font-semibold tracking-widest text-gp-red uppercase">
+        <span className="rounded border border-gp-red/50 bg-gp-red/10 px-2 py-1 text-[11px] font-semibold tracking-widest text-gp-red-text uppercase">
           Synthetic
         </span>
       </div>
@@ -414,46 +414,47 @@ export default function DutyCycleWorkbench({ onBack }: { onBack: () => void }) {
 
             <ul className="space-y-2" aria-label="Segments">
               {rows.map((row, i) => (
-                <li
-                  key={row.key}
-                  role="group"
-                  aria-label={`Segment ${i + 1}`}
-                  className="grid grid-cols-2 gap-2 rounded-lg border border-gp-line bg-gp-bg/40 p-2.5 sm:grid-cols-[minmax(0,1fr)_6rem_6rem_auto] sm:items-start"
-                >
-                  <RowInput
-                    className="col-span-2 sm:col-span-1"
-                    prefix={`Segment ${i + 1}`}
-                    label="Name"
-                    inputMode="text"
-                    value={row.name}
-                    error={errorFor(`segments.${i}.name`)}
-                    onChange={(v) => editRow(row.key, "name", v)}
-                  />
-                  <RowInput
-                    prefix={`Segment ${i + 1}`}
-                    label="Power (kW)"
-                    inputMode="decimal"
-                    value={row.kw}
-                    error={errorFor(`segments.${i}.power_kw`)}
-                    onChange={(v) => editRow(row.key, "kw", v)}
-                  />
-                  <RowInput
-                    prefix={`Segment ${i + 1}`}
-                    label="Duration (min)"
-                    inputMode="decimal"
-                    value={row.min}
-                    error={errorFor(`segments.${i}.duration_min`)}
-                    onChange={(v) => editRow(row.key, "min", v)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeRow(row.key)}
-                    disabled={rows.length <= 1}
-                    aria-label={`Remove segment ${i + 1}`}
-                    className="col-span-2 rounded-md border border-gp-line-strong px-2.5 py-1.5 text-xs text-gp-muted enabled:hover:bg-gp-surface-2 enabled:hover:text-gp-text disabled:opacity-40 sm:col-span-1 sm:mt-[18px]"
+                <li key={row.key}>
+                  <div
+                    role="group"
+                    aria-label={`Segment ${i + 1}`}
+                    className="grid grid-cols-2 gap-2 rounded-lg border border-gp-line bg-gp-bg/40 p-2.5 sm:grid-cols-[minmax(0,1fr)_6rem_6rem_auto] sm:items-start"
                   >
-                    Remove
-                  </button>
+                    <RowInput
+                      className="col-span-2 sm:col-span-1"
+                      prefix={`Segment ${i + 1}`}
+                      label="Name"
+                      inputMode="text"
+                      value={row.name}
+                      error={errorFor(`segments.${i}.name`)}
+                      onChange={(v) => editRow(row.key, "name", v)}
+                    />
+                    <RowInput
+                      prefix={`Segment ${i + 1}`}
+                      label="Power (kW)"
+                      inputMode="decimal"
+                      value={row.kw}
+                      error={errorFor(`segments.${i}.power_kw`)}
+                      onChange={(v) => editRow(row.key, "kw", v)}
+                    />
+                    <RowInput
+                      prefix={`Segment ${i + 1}`}
+                      label="Duration (min)"
+                      inputMode="decimal"
+                      value={row.min}
+                      error={errorFor(`segments.${i}.duration_min`)}
+                      onChange={(v) => editRow(row.key, "min", v)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeRow(row.key)}
+                      disabled={rows.length <= 1}
+                      aria-label={`Remove segment ${i + 1}`}
+                      className="col-span-2 rounded-md border border-gp-line-strong px-2.5 py-1.5 text-xs text-gp-muted enabled:hover:bg-gp-surface-2 enabled:hover:text-gp-text disabled:opacity-40 sm:col-span-1 sm:mt-[18px]"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

@@ -22,11 +22,14 @@ import type { Facility } from "@/lib/types";
 import FacilityMap from "./map/FacilityMap";
 import FacilityCard from "./map/FacilityCard";
 import IndustryGallery from "./gallery/IndustryGallery";
+import Experiences from "./landing/Experiences";
+import FacilityPicker from "./map/FacilityPicker";
 import Workbench from "./daventry/Workbench";
 import DutyCycleWorkbench from "./mining/DutyCycleWorkbench";
 import Planner from "./mobilepower/Planner";
 import TestPlanWorkbench from "./seymour/TestPlanWorkbench";
 import LabScene from "./lab/LabScene";
+import ScrollRegion from "./lab/ScrollRegion";
 import type { AssetId } from "./lab/assets";
 import ChallengePanel from "./challenges/ChallengePanel";
 import type { ChallengeId } from "./challenges/deriveChallenge";
@@ -74,7 +77,7 @@ function Header({ right }: { right: React.ReactNode }) {
     <header className="flex items-center justify-between gap-4 border-b border-gp-line px-5 py-2.5">
       <div className="flex items-baseline gap-3">
         <span className="text-sm font-bold tracking-[0.25em] text-gp-text">
-          GRID<span className="text-gp-red">PROOF</span>
+          GRID<span className="text-gp-red-text">PROOF</span>
         </span>
         <span className="hidden text-xs text-gp-faint sm:inline">
           Virtual Power Integration Workbench
@@ -253,7 +256,7 @@ export default function AppShell() {
         <main className="flex-1 px-5 py-5">
           <div className="mx-auto max-w-[1280px]">
             <div className="mb-4">
-              <p className="text-[11px] font-semibold tracking-[0.2em] text-gp-red uppercase">
+              <p className="text-[11px] font-semibold tracking-[0.2em] text-gp-red-text uppercase">
                 Independent · Cummins-inspired · synthetic data
               </p>
               <h1 className="mt-1 text-3xl font-semibold tracking-tight text-gp-text">
@@ -270,13 +273,19 @@ export default function AppShell() {
             </div>
             {facilities && facility ? (
               <div className="grid gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
-                <FacilityMap
-                  facilities={facilities}
-                  activeId={facility.id}
-                  onActive={setActiveFacilityId}
-                  enteringId={enteringId}
-                  onEnter={enterFromMap}
-                />
+                <div>
+                  <FacilityMap
+                    facilities={facilities}
+                    activeId={facility.id}
+                    onActive={setActiveFacilityId}
+                    enteringId={enteringId}
+                  />
+                  <FacilityPicker
+                    facilities={facilities}
+                    activeId={facility.id}
+                    onActive={setActiveFacilityId}
+                  />
+                </div>
                 <div className="relative min-h-0">
                   <FacilityCard
                     facility={facility}
@@ -305,6 +314,7 @@ export default function AppShell() {
             ) : (
               <div className="aspect-[1000/423] animate-pulse rounded-xl border border-gp-line bg-gp-surface" />
             )}
+            {facilities && facility && <Experiences />}
             {facilities && facility && (
               <IndustryGallery
                 onOpenLab={openLabFrom}
@@ -492,57 +502,64 @@ export default function AppShell() {
             }`}
           >
             <div className="overflow-hidden rounded-xl border border-gp-line bg-gradient-to-b from-gp-surface to-gp-bg p-1.5 lg:sticky lg:top-3">
-              <LabScene
-                config={ws.draft}
-                selected={selected}
-                onSelect={(id) => {
-                  setSelected(id);
-                  setRightTab("inspector");
-                }}
-                frame={
-                  playedFrames && playback.index !== null
-                    ? playedFrames[playback.index]
-                    : null
-                }
-                frameCaption={
-                  comparison.result
-                    ? `${comparison.result.mode === "recorded" ? "RECORDED DEMO PLAYBACK" : "SIMULATED PLAYBACK"} · ${side.toUpperCase()} · EVIDENCE FRAME ${(playback.index ?? 0) + 1}/${playedFrames?.length ?? 0} · NOT LIVE EQUIPMENT DATA`
-                    : undefined
-                }
-              />
+              <ScrollRegion
+                label="Lab scene"
+                hint="The lab is wider than this screen: scroll sideways, or use the arrow keys, to see all of it and read the equipment labels."
+              >
+                <LabScene
+                  config={ws.draft}
+                  selected={selected}
+                  onSelect={(id) => {
+                    setSelected(id);
+                    setRightTab("inspector");
+                  }}
+                  frame={
+                    playedFrames && playback.index !== null
+                      ? playedFrames[playback.index]
+                      : null
+                  }
+                  frameCaption={
+                    comparison.result
+                      ? `${comparison.result.mode === "recorded" ? "RECORDED DEMO PLAYBACK" : "SIMULATED PLAYBACK"} · ${side.toUpperCase()} · EVIDENCE FRAME ${(playback.index ?? 0) + 1}/${playedFrames?.length ?? 0} · NOT LIVE EQUIPMENT DATA`
+                      : undefined
+                  }
+                />
+              </ScrollRegion>
             </div>
             <aside
               aria-label="Inspector and test results"
               className="rounded-xl border border-gp-line bg-gp-surface p-3 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
             >
-              <div
-                role="tablist"
-                aria-label="Right panel"
-                className="mb-3 flex items-center gap-1"
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={rightTab === "inspector"}
-                  onClick={() => setRightTab("inspector")}
-                  className={tabClass(rightTab === "inspector")}
+              <div className="mb-3 flex items-center gap-1">
+                <div
+                  role="tablist"
+                  aria-label="Right panel"
+                  className="flex items-center gap-1"
                 >
-                  Inspector
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={rightTab === "results"}
-                  onClick={() => setRightTab("results")}
-                  className={tabClass(rightTab === "results")}
-                >
-                  Test results
-                  {comparison.result
-                    ? resultsOutdated
-                      ? " · outdated"
-                      : " ●"
-                    : ""}
-                </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={rightTab === "inspector"}
+                    onClick={() => setRightTab("inspector")}
+                    className={tabClass(rightTab === "inspector")}
+                  >
+                    Inspector
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={rightTab === "results"}
+                    onClick={() => setRightTab("results")}
+                    className={tabClass(rightTab === "results")}
+                  >
+                    Test results
+                    {comparison.result
+                      ? resultsOutdated
+                        ? " · outdated"
+                        : " ●"
+                      : ""}
+                  </button>
+                </div>
                 {rightTab === "results" && (
                   <button
                     type="button"

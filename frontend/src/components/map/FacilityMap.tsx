@@ -12,7 +12,6 @@ type Props = {
   onActive: (id: string) => void;
   /** Facility id being entered (drives the zoom-in transition). */
   enteringId: string | null;
-  onEnter: (facility: Facility) => void;
 };
 
 const LABEL_OFFSET: Record<string, { dx: number; anchor: "start" | "end" }> = {
@@ -32,12 +31,12 @@ export default function FacilityMap({
   activeId,
   onActive,
   enteringId,
-  onEnter,
 }: Props) {
-  const select = (facility: Facility) => {
-    onActive(facility.id);
-    if (facility.is_interactive) onEnter(facility);
-  };
+  // Focus does not change the card: tabbing across the markers must not swap the card
+  // away from the one just selected, or its button could never be reached by keyboard.
+  // A marker only selects the facility and shows its card. Entering the lab (and so
+  // creating a demo workspace) is the card's explicit Enter Virtual Lab action.
+  const select = (facility: Facility) => onActive(facility.id);
   const entering = facilities.find((f) => f.id === enteringId) ?? null;
   const enteringPos = entering
     ? project(entering.latitude, entering.longitude)
@@ -116,7 +115,6 @@ export default function FacilityMap({
                 key={facility.id}
                 transform={`translate(${x} ${y})`}
                 onMouseEnter={() => onActive(facility.id)}
-                onFocus={() => onActive(facility.id)}
               >
                 {interactive && (
                   <circle
@@ -155,7 +153,7 @@ export default function FacilityMap({
                     textAnchor={label.anchor}
                     className={`text-[9.5px] font-medium tracking-[0.14em] uppercase ${
                       interactive || experience
-                        ? "fill-gp-red"
+                        ? "fill-gp-red-text"
                         : "fill-gp-steel"
                     }`}
                     stroke="#0b0d10"

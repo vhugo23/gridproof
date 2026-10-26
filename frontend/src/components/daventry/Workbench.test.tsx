@@ -304,6 +304,17 @@ describe("Daventry workbench", () => {
     expect(bodyOf(fn, 1)).toEqual(bodyOf(fn, 0));
   });
 
+  it("says the server hit an error, not that the API is unavailable, on a 500", async () => {
+    stubApi(apiError(500, "INTERNAL_ERROR"));
+    render(<Workbench onBack={() => {}} />);
+    run();
+    expect(
+      await screen.findByText(/The server hit an unexpected error/),
+    ).toBeVisible();
+    expect(screen.queryByText(/The GridProof API is unavailable/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+  });
+
   it("marks a result as outdated once an input changes", async () => {
     stubApi(json(200, CAPACITY_CASE_1));
     render(<Workbench onBack={() => {}} />);

@@ -118,7 +118,7 @@ export default function Workbench({ onBack }: { onBack: () => void }) {
             Synthetic exercise · independent of the plant and of Cummins Inc.
           </p>
         </div>
-        <span className="rounded border border-gp-red/50 bg-gp-red/10 px-2 py-1 text-[11px] font-semibold tracking-widest text-gp-red uppercase">
+        <span className="rounded border border-gp-red/50 bg-gp-red/10 px-2 py-1 text-[11px] font-semibold tracking-widest text-gp-red-text uppercase">
           Synthetic
         </span>
       </div>

@@ -414,3 +414,16 @@ describe("Mining duty-cycle workbench", () => {
     }
   });
 });
+
+describe("Mining duty-cycle workbench: list semantics", () => {
+  it("keeps every segment row inside a real list item", () => {
+    stubApi();
+    render(<DutyCycleWorkbench onBack={() => {}} />);
+    const items = within(
+      screen.getByRole("list", { name: "Segments" }),
+    ).getAllByRole("listitem");
+    expect(items).toHaveLength(4);
+    for (const item of items)
+      expect(within(item).getAllByRole("group")).toHaveLength(1);
+  });
+});

@@ -380,11 +380,11 @@ export default function ChallengePanel(props: Props) {
           onClick={() => setOpen((o) => !o)}
           className="flex min-w-0 flex-1 items-center gap-2 text-left"
         >
-          <span aria-hidden className="text-gp-red">
+          <span aria-hidden className="text-gp-red-text">
             {open ? "▾" : "▸"}
           </span>
           <span className="min-w-0">
-            <span className="block text-[11px] font-semibold tracking-widest text-gp-red uppercase">
+            <span className="block text-[11px] font-semibold tracking-widest text-gp-red-text uppercase">
               Challenge
             </span>
             <span className="block text-sm font-medium text-gp-text">

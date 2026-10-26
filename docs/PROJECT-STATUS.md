@@ -1,14 +1,19 @@
 # GridProof — Project Status
 
-**Updated:** 2026-10-26 · **Branch:** `main` · **Latest source commit:** `8fd9a47` (Mobile-Site Power Planner frontend release, H-12b; Backend Checks and Frontend Checks green; Vercel reported the deployment complete; verified in the public browser on 2026-10-26, see the last section). Backend API-19 (`66dee81`) is live on Render. Earlier: `9fdcf23` (Mining duty-cycle workbench release; both CI jobs green; Vercel deployment completed) with API-18 (`e71a057`) live on Render. See the Mining section below for its production verification. Guided challenges (`c52b553`), unchanged from the previous status: the deployed Vercel commit has **not** been verified through Vercel. A read-only fetch of the public site at about 17:20 UTC on 2026-10-19, shortly after the push, served a JavaScript chunk containing the new challenge text, which suggests the push triggered an automatic production deploy; it was not confirmed in the Vercel dashboard and no production smoke test has been run on this build.
+**Updated:** 2026-10-26 · **Branch:** `main` · **Latest source commit:** `9df44ce` (Seymour Engine Test-Plan Workbench frontend release, H-11), with the API-20 backend at `7eb86ad` and the latest documentation commit `f6315a0`. All five workbenches are released and each has its own verification section below: the Fridley virtual lab, the Daventry capacity workbench (H-10), the Mining duty-cycle analyzer (H-12a), the Mobile-Site Power Planner (H-12b) and the Seymour engine test-plan workbench (H-11). The Render deployment of each backend release was confirmed from the owner's dashboard report and the live endpoint, not inspected by the assistant.
+
+**Previous status line (historical, as written before the Seymour release; its caveats still apply where they are unrelated to Seymour):** **Updated:** 2026-10-26 · **Branch:** `main` · **Latest source commit:** `8fd9a47` (Mobile-Site Power Planner frontend release, H-12b; Backend Checks and Frontend Checks green; Vercel reported the deployment complete; verified in the public browser on 2026-10-26, see the last section). Backend API-19 (`66dee81`) is live on Render. Earlier: `9fdcf23` (Mining duty-cycle workbench release; both CI jobs green; Vercel deployment completed) with API-18 (`e71a057`) live on Render. See the Mining section below for its production verification. Guided challenges (`c52b553`), unchanged from the previous status: the deployed Vercel commit has **not** been verified through Vercel. A read-only fetch of the public site at about 17:20 UTC on 2026-10-19, shortly after the push, served a JavaScript chunk containing the new challenge text, which suggests the push triggered an automatic production deploy; it was not confirmed in the Vercel dashboard and no production smoke test has been run on this build.
 
 ## Current position
 
+- **Five workbenches released (2026-10-26).** Fridley lab, Daventry, Mining, Mobile Power and Seymour are live at https://gridproof-seven.vercel.app. The map is a static SVG with approximate city-level markers; the Fridley lab is a 2.5D SVG scene. The Daventry, Mining, Mobile Power and Seymour calculations are stateless (no session, no database); the Fridley lab uses the anonymous demo workspace. The older bullets below are the historical A-series narrative.
 - **M0 Foundation: Done** (F-01 to F-09). Next.js 16 frontend, FastAPI backend, Neon connection, Alembic migrations 001 and 002, test tooling and CI.
 - **M1 First vertical slice: Done for the conference scope** (A-01 to A-07 plus the demo slices below). Conference execution plan: map, lab, configuration editor, deterministic startup check, comparison UI. **Publicly deployed** at https://gridproof-seven.vercel.app/ (see [Deployment observations](#deployment-observations-2026-10-19)).
 - **Sprint 1 (agreed):** F-11 isolated PostgreSQL integration testing, then A-01 facility catalog seeding. The documentation foundation is committed (`99dd538`). **F-11 is Done** (commit `2041663`, CI green on both jobs). **A-01 is Done** (commit `09a49d6`, CI green on both jobs, 156 backend tests); the seed had not been applied to Neon at that point (superseded: see Deployment observations). **A-01b is Done** (`GET /api/v1/facilities`, commit `7320f28`, CI green on both jobs, 179 backend tests). **A-02 is Done** (`SystemConfigV1`, commit `74fe5e2`, CI green on both jobs, 435 backend tests). **A-03 is Done** (atomic workspace initialization service, commit `8cf9a6b`, CI green on both jobs, 462 backend tests). **A-04 is Done** (`GET /api/v1/session`, commit `b363dad`, CI green on both jobs, 519 backend tests). **A-05 is Done** (`GET /api/v1/configurations/current`, commit `d9427bf`, CI green on both jobs, 554 backend tests). **A-06 is Done** (`POST /api/v1/configurations/{id}/versions`, commit `d117df2`, CI green on both jobs, 663 backend tests). **A-07 is Done** (commit `b79d012`, CI run 39139803047 green on both jobs: 663 backend tests, 21 frontend tests). Next: the startup-delay simulator and `POST /api/v1/demo/startup-check` (approved scope).
 
 ## Implemented (verified in source)
+
+*The list below is the historical A-07 era. Since then the backend also gained `POST /api/v1/demo/startup-check`, `capacity-check`, `duty-cycle`, `mobile-power` and `engine-test-plan` (API-16 to API-20), and the frontend gained the comparison UI, guided challenges, Industry Applications gallery and the four synthetic workbenches; see the dated sections below.*
 
 - Backend: FastAPI app with `GET /api/v1/health`, `GET /api/v1/health/database`, `GET /api/v1/facilities`, `GET /api/v1/session`, (A-05) `GET /api/v1/configurations/current` and (A-06) `POST /api/v1/configurations/{id}/versions`; settings; DB session; four domain tables defined in the models and in migrations 001/002 (`demo_workspaces`, `facility_catalog`, `configurations`, `configuration_versions`).
 - Frontend (A-07 + conference slice, commit `b79d012`): SVG facility map (Fridley/Seymour/Daventry) → Fridley 2.5D synthetic lab → equipment inspector (G1/G2 delay and enable, battery initial SoC, critical load) → save as new version → server-confirmed reload. API client, session bootstrap and error states (validation, 409 conflict, session expiry, outage). The old health-status page and `ConnectionBadge` were replaced by a header API-status chip. `next.config.ts` reads `API_PROXY_TARGET` (default `http://127.0.0.1:8000`).
@@ -16,7 +21,7 @@
 
 ## Not implemented
 
-general scenarios, persisted runs, PDF reports, 3D, Gemini. (Only the fixed startup-check scenario exists; it is stateless.) See [`09-known-limitations.md`](09-known-limitations.md).
+general scenarios, persisted runs, PDF reports, 3D, Gemini, a geographic tile map (the map is a static SVG). (Only the fixed startup-check scenario exists; it is stateless. Still true on 2026-10-26.) See [`09-known-limitations.md`](09-known-limitations.md).
 
 ## Roadmap order (Phase A)
 
@@ -37,11 +42,13 @@ F-11 → A-01 → A-01b → A-02 → A-03 (atomic workspace initialization) → 
 - Which commit is deployed, and whether a deploy is pending for later commits, is not verified.
 - The simulator is a single fixed, simplified, stateless scenario (`docs/09-known-limitations.md`, startup-check notes); it is not validated against real equipment.
 
-## Next three recommended actions
+## Next recommended actions (updated 2026-10-26)
 
-1. Run the production smoke test on the public URL (it creates demo-workspace versions; needs approval) and rehearse the recorded-demo fallback. Confirm in Vercel whether pushes to `main` auto-deploy.
-2. Verify the deployed Vercel commit and the Render `FRONTEND_ORIGINS` value, and record them here.
-3. Record the SHPE demo (G-06) from the deployed app. Post-conference: Daventry screening workbench (amendment approved, not built), Seymour engine test-plan exercise and vehicle application ideas (roadmap concepts only).
+1. Verify the deployed Vercel commit and the Render `FRONTEND_ORIGINS` value in the dashboards and record them (still not verified by the assistant; the Render deployments of API-17 to API-20 are owner-reported).
+2. Record the SHPE demo (G-06) from the deployed app, if it is still wanted (not recorded in these documents).
+3. Product-polish findings from the 2026-10-26 acceptance audit (text contrast, list semantics, Fridley marker activation, landing-page discovery of the five experiences, an out-of-date README) are **implemented and verified locally** on branch `feature/product-polish` and submitted as a draft PR for CI review. They are **not merged and not released**: the public site still behaves as before until that release is approved. This line is replaced when the work is released or dropped.
+
+Earlier recommended actions (historical, 2026-10-19): run the production smoke test, verify the deployed commit and `FRONTEND_ORIGINS`, record the SHPE demo; post-conference ideas were the Daventry workbench (since built), a Seymour engine test-plan exercise (since built) and vehicle application ideas (the Mining and Mobile Power exercises, since built).
 
 ## Documents
 

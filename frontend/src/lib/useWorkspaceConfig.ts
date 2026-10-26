@@ -17,6 +17,7 @@ export type SaveIssue =
   | { kind: "conflict"; message: string; currentVersion: number | null }
   | { kind: "session"; message: string }
   | { kind: "unavailable"; message: string }
+  | { kind: "server"; message: string }
   | { kind: "other"; message: string };
 
 export type SaveStatus = "idle" | "saving" | "saved";
@@ -58,6 +59,14 @@ function issueFrom(error: unknown): SaveIssue {
           "Your demo session expired. Your edits are still here; start a new session to continue.",
       };
     case "unavailable":
+      // The API's own 500 means it is reachable; "unavailable" is for outages.
+      if (error.code === "INTERNAL_ERROR") {
+        return {
+          kind: "server",
+          message:
+            "The server hit an unexpected error. Your edits are kept; try again.",
+        };
+      }
       return {
         kind: "unavailable",
         message:
