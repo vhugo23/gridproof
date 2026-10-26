@@ -312,3 +312,17 @@ GitHub Actions run 39141348897 (commit `cd09696`): both jobs succeeded; backend 
 | Public browser (headless Chromium via Playwright against https://gridproof-seven.vercel.app/) | At 1366 px and 390 px: Industry Applications to the On-highway brief to the planner, `#mobile-power-planner` (also loaded directly); the live sample and four package categories as above; the rounded-equality note on the 320.01 kW case; the outdated-result notice after an edit; the server's field error ("Must be greater than 0 and at most 500", `aria-invalid`); Tab order through the inputs, Add load, Reset, margin and Calculate; Enter on Add load and inside a field; no horizontal overflow on any screen; "← Map", browser Back and Forward. The only console or network error was the deliberate 422. |
 | Read-only regression | Mining analyzer (77.00 kWh per cycle, 1386.00 kWh per shift) and Daventry workbench (400 kW case) calculated; the Fridley entry (Power generation brief with its lab button) loaded and only `GET /api/v1/facilities` was requested. The lab itself was not opened, so no workspace was created. |
 | Not verified | Browsers other than Chromium, real touch devices, screen readers; the Vercel and Render dashboards (deployment state came from GitHub commit status, the live responses and the owner's report); the exact focus target after Add load in production (covered by the local browser run and unit tests); the Fridley lab and save flow in production. |
+
+### Seymour Engine Test-Plan Workbench (local, 2026-10-26)
+
+| Check | Result |
+|---|---|
+| Backend `ruff format --check`, `ruff check` | Clean |
+| Backend `pytest` (Docker `postgres:17`, `GRIDPROOF_REQUIRE_TEST_DB=1`) | 1767 passed (145 new: 96 model, 49 API) |
+| Frontend `typecheck`, `lint`, `prettier --check`, `build` | Clean |
+| Frontend `vitest` | 14 files, 212 tests passed (30 new: 26 workbench, 4 AppShell journey) |
+| Browser (Chrome headless, local FastAPI with a throwaway database, 1366 px and 390 px) | 54 of 54 scripted checks passed: card and real-site text, hash route, golden result, keyboard reorder, server field error, 157.08 kW boundary, repeated points, navigation, no horizontal overflow, Daventry, Mining, Mobile Power and Fridley lab regressions |
+
+- Expected values are independent of the implementation: the hand-calculated powers (50π/3, 50π, 48π, 52π kW) are checked against π computed with Machin's formula in integers; coverage outcomes, inclusive bounds, the 157.0796 kW versus 157.08 kW threshold, repeated entries, order effects, validation bounds and API conventions have their own tests, and a schema test asserts no engine-data fields and `not_verified` on every result.
+- Observed: while `next start` and uvicorn were running, a few timing-sensitive frontend tests (including two older ones) timed out in one full run; with the servers stopped the full suite passed. A first-visit 401 appears in the console only when the Fridley lab bootstraps its session (existing behavior), never from the Seymour workbench.
+- Not verified: Safari, Firefox and real touch devices; any production deployment.

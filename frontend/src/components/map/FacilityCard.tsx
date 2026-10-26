@@ -58,15 +58,15 @@ export default function FacilityCard({
         </div>
       )}
 
-      {experience && (
+      {experience?.image && (
         <div className="mt-2.5 h-[66px] shrink-0 overflow-hidden rounded-lg border border-gp-line bg-gp-bg">
           <Image
-            src="/illustrations/daventry-package-lineup.svg"
-            alt="Illustration of four synthetic generator sets of increasing size."
+            src={experience.image.src}
+            alt={experience.image.alt}
             width={780}
             height={262}
             unoptimized
-            className="h-full w-full object-cover object-[50%_58%]"
+            className={`h-full w-full ${experience.image.fit === "contain" ? "object-contain" : "object-cover object-[50%_58%]"}`}
           />
         </div>
       )}

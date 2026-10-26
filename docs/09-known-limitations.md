@@ -103,6 +103,19 @@
 - The domain module repeats the small decimal and name validators of the duty-cycle module on purpose, so the exercises stay independent.
 - Deployment: until the Render backend exposes API-19, the planner's Calculate button answers "Request failed (404)". Render did not auto-deploy API-17 promptly, so the backend must be live before the frontend is released.
 
+## Seymour Engine Test-Plan Workbench notes (2026-10-26)
+
+- The workbench checks a plan the user types. It is not validated against any real engine, test cell or procedure and uses no engine data; the sample values (points A to D and four regions) are invented and are not Cummins values or specifications, and it is not the Seymour site's software, procedures or data.
+- Coverage is planning coverage only. A matching point does not show that an engine can operate at that speed and torque (the model has no engine map, limit or envelope), and Covered by plan is not acceptance. The response always carries `not_verified`; GridProof ingests no measurements.
+- Requirements are speed and torque rectangles with inclusive bounds and an optional minimum theoretical power. No tolerance or measurement uncertainty is modeled, so a point planned exactly on a bound counts as inside.
+- Repeated coordinates are allowed and count as separate planned entries toward a minimum; they do not establish distinct-condition coverage. The distinct-condition count is reported, and nothing is deduplicated.
+- Dwell is planned hold time. The summary and timeline sum scheduled holds only: not total elapsed test time, not measured stabilization. Transition, setup and stabilization time and ramp rates are not modeled; step changes are plain differences.
+- Theoretical shaft power is arithmetic on the entered speed and torque (not measured, corrected or attainable power). It uses 80-digit decimal arithmetic from a 50-decimal pi; pi is irrational, so the result is a finite-precision approximation (the 50-decimal pi constant bounds its error far below 0.01 kW), not mathematically exact pi, and spot-check tests confirm that sampled computed powers do not land exactly on a 2-decimal threshold. Verdicts use unrounded values, so a power can display equal to a threshold and still fall below it; the UI says so.
+- The evidence checklist is generic text derived from the plan, read-only, and every item stays Not started. It cites no standard and no company procedure, and GridProof tracks none of the evidence.
+- Limits (10 requirements, 12 points, 6,000 rpm, 20,000 N·m, 480 min per hold, 1,440 min total hold) are arbitrary exercise bounds, not engine limits. The shared 4 KiB body limit is met by the largest valid plan with ASCII labels; very long non-ASCII labels can exceed it and receive 413.
+- Results are not saved and there is no export; refreshing returns to the sample values. The domain module repeats the small decimal and text validators of earlier modules on purpose, so the exercises stay independent.
+- Deployment: until the Render backend exposes API-20, the workbench's Check button answers "Request failed (404)". The backend must be live before the frontend is released (D-28 order).
+
 ## Configuration schema notes (A-02)
 
 - Docs 01, 02 and 03 mention an adjustable load bank, but `SystemConfigV1` has no load-bank field by design: `equipment.load.critical_kw` is the baseline load, `set_load_kw` scenario events change demand during a simulation, and the load-bank visualization shows that simulated demand (decision D-18; doc 05 v1.2).

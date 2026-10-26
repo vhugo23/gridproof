@@ -12,6 +12,7 @@ import {
   DAVENTRY_HASH,
   MINING_HASH,
   MOBILE_HASH,
+  SEYMOUR_HASH,
 } from "@/lib/experiences";
 import { useFacilities } from "@/lib/useFacilities";
 import { useWorkspaceConfig } from "@/lib/useWorkspaceConfig";
@@ -24,6 +25,7 @@ import IndustryGallery from "./gallery/IndustryGallery";
 import Workbench from "./daventry/Workbench";
 import DutyCycleWorkbench from "./mining/DutyCycleWorkbench";
 import Planner from "./mobilepower/Planner";
+import TestPlanWorkbench from "./seymour/TestPlanWorkbench";
 import LabScene from "./lab/LabScene";
 import type { AssetId } from "./lab/assets";
 import ChallengePanel from "./challenges/ChallengePanel";
@@ -99,6 +101,7 @@ export default function AppShell() {
   const inWorkbench = hash === DAVENTRY_HASH;
   const inMining = hash === MINING_HASH;
   const inMobile = hash === MOBILE_HASH;
+  const inSeymour = hash === SEYMOUR_HASH;
   const [enteringId, setEnteringId] = useState<string | null>(null);
   const [activeFacilityId, setActiveFacilityId] = useState("fridley");
   const [selected, setSelected] = useState<AssetId | null>(null);
@@ -215,6 +218,18 @@ export default function AppShell() {
     );
   }
 
+  if (inSeymour) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header right={<ApiChip state={apiState} />} />
+        <main className="flex-1 px-5 py-3">
+          <TestPlanWorkbench onBack={leaveLab} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (inWorkbench) {
     return (
       <div className="flex min-h-screen flex-col">
@@ -248,8 +263,9 @@ export default function AppShell() {
                 Enter a synthetic virtual lab inspired by the Power Integration
                 Center in Fridley, Minnesota: configure a power system, run a
                 utility-outage startup test and review the evidence. Markers are
-                approximate city-level locations. Seymour is informational;
-                Daventry offers an independent synthetic generator workbench.
+                approximate city-level locations. Seymour and Daventry each
+                offer an independent synthetic workbench beside their real-site
+                facts.
               </p>
             </div>
             {facilities && facility ? (

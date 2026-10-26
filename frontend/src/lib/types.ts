@@ -326,3 +326,124 @@ export type MobilePowerEvidence = {
   explanation: string;
   assumptions: Array<{ id: string; text: string }>;
 };
+
+// Seymour Engine Test-Plan Workbench (docs/05-api-contracts.md API-20). Rendered as
+// returned; the frontend never recomputes power, matches, coverage statuses or hold
+// times. Coverage here is planning coverage only and is never a verification result.
+
+export type EnginePlanRequirementInput = {
+  label: string;
+  rpm_min: number;
+  rpm_max: number;
+  torque_min_nm: number;
+  torque_max_nm: number;
+  power_min_kw: number | null;
+  min_points: number;
+  min_dwell_min: number;
+};
+
+export type EnginePlanPointInput = {
+  label: string;
+  rpm: number;
+  torque_nm: number;
+  dwell_min: number;
+};
+
+export type EnginePlanRequest = {
+  objective: string;
+  requirements: EnginePlanRequirementInput[];
+  points: EnginePlanPointInput[];
+};
+
+export type EnginePlanPoint = {
+  id: string;
+  label: string;
+  rpm: number;
+  torque_nm: number;
+  dwell_min: number;
+  power_kw: number;
+  hold_start_min: number;
+  hold_end_min: number;
+  step_from_previous: { delta_rpm: number; delta_torque_nm: number } | null;
+  covers: string[];
+  same_conditions_as: string[];
+};
+
+export type EnginePlanRangeCheck = {
+  met: boolean;
+  value: number;
+  minimum: number;
+  maximum: number;
+  /** Negative below the minimum, positive above the maximum, 0 inside. */
+  outside_by: number;
+};
+
+export type EnginePlanPowerCheck = {
+  met: boolean;
+  value: number;
+  minimum: number;
+  outside_by: number;
+  /** Not met although value and minimum display as equal at 2 decimals. */
+  equal_when_rounded: boolean;
+};
+
+export type EnginePlanPointCheck = {
+  point_id: string;
+  matches: boolean;
+  rpm: EnginePlanRangeCheck;
+  torque: EnginePlanRangeCheck;
+  power: EnginePlanPowerCheck | null;
+};
+
+export type EnginePlanStatus =
+  "covered_by_plan" | "partly_covered" | "not_covered";
+
+export type EnginePlanRequirement = {
+  id: string;
+  label: string;
+  status: EnginePlanStatus;
+  status_label: string;
+  min_points: number;
+  min_dwell_min: number;
+  matched_point_ids: string[];
+  matched_entries: number;
+  matched_distinct_conditions: number;
+  matched_hold_min: number;
+  shortfall: { entries: number; hold_min: number };
+  point_checks: EnginePlanPointCheck[];
+  explanation: string;
+};
+
+export type EnginePlanEvidence = {
+  model_version: string;
+  inputs: EnginePlanRequest;
+  points: EnginePlanPoint[];
+  requirements: EnginePlanRequirement[];
+  summary: {
+    requirements_total: number;
+    covered_by_plan: number;
+    partly_covered: number;
+    not_covered: number;
+    points_total: number;
+    distinct_conditions: number;
+    repeated_conditions: Array<{
+      rpm: number;
+      torque_nm: number;
+      point_ids: string[];
+    }>;
+    planned_hold_min: number;
+    min_power_kw: number;
+    max_power_kw: number;
+    unmatched_point_ids: string[];
+  };
+  verification: { status: "not_verified"; statement: string };
+  evidence_checklist: Array<{
+    id: string;
+    scope: "plan" | "requirement" | "point";
+    ref_id: string | null;
+    text: string;
+    status: "not_started";
+  }>;
+  explanation: string;
+  assumptions: Array<{ id: string; text: string }>;
+};

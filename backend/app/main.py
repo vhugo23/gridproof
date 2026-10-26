@@ -13,6 +13,7 @@ from app.routes.facilities import router as facilities_router
 from app.routes.mining import router as mining_router
 from app.routes.mobile_power import router as mobile_power_router
 from app.routes.session import router as session_router
+from app.routes.seymour import router as seymour_router
 
 app = FastAPI(
     title="GridProof API",
@@ -26,6 +27,7 @@ app.include_router(demo_router)
 app.include_router(facilities_router)
 app.include_router(mining_router)
 app.include_router(mobile_power_router)
+app.include_router(seymour_router)
 app.include_router(session_router)
 
 
